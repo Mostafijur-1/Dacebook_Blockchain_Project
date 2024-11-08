@@ -1,4 +1,6 @@
-import { useState } from "react";
+import Upload from "./artifacts/contracts/Upload.sol/Upload.json";
+import { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import FileUpload from "./components/FileUpload";
 import Display from "./components/Display";
 import Modal from "./components/Modal";
@@ -9,6 +11,7 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [contract, setContract] = useState(null); // Assuming we're dealing with a contract
   const [account, setAccount] = useState(""); // Store user's account info
+  const [provider, setProvider] = useState(null);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
