@@ -3,15 +3,63 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import FileUpload from "./components/FileUpload";
 import Display from "./components/Display";
-import Modal from "./components/Modal";
 import AccessFile from "./components/AccessFile";
-import "./App.css";
+import AccessList from "./components/AccessList";
 
 function App() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [contract, setContract] = useState(null); // Assuming we're dealing with a contract
-  const [account, setAccount] = useState(""); // Store user's account info
-  const [provider, setProvider] = useState(null);
+  const [readOnlyContract, setReadOnlyContract] = useState(null); // Read-only contract
+  const [contract, setContract] = useState(null); // Contract with signer
+  const [account, setAccount] = useState(""); // User's account
+
+  useEffect(() => {
+    const loadProvider = async () => {
+      if (window.ethereum) {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+
+        window.ethereum.on("chainChanged", () => {
+          console.log("Chain changed");
+          window.location.reload();
+        });
+
+        window.ethereum.on("accountsChanged", () => {
+          console.log("Account changed");
+          window.location.reload();
+        });
+
+        try {
+          await provider.send("eth_requestAccounts", []);
+          const signer = await provider.getSigner();
+          const address = await signer.getAddress();
+          console.log("Connected account:", address);
+          setAccount(address);
+
+          const contractAddress = import.meta.env.VITE_APP_CONTRACT_ADDRESS;
+
+          // Read-only contract for calls (like display and shareAccess)
+          const readOnlyContract = new ethers.Contract(
+            contractAddress,
+            Upload.abi,
+            provider
+          );
+          setReadOnlyContract(readOnlyContract);
+
+          // Contract with signer for state-modifying functions (like add, allow, disallow)
+          const contractWithSigner = new ethers.Contract(
+            contractAddress,
+            Upload.abi,
+            signer
+          );
+          setContract(contractWithSigner);
+        } catch (error) {
+          console.error("Failed to connect to wallet:", error);
+        }
+      } else {
+        console.error("MetaMask is not available");
+      }
+    };
+
+    loadProvider();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -21,21 +69,19 @@ function App() {
       </header>
 
       <main className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
-        <FileUpload />
-        <Display />
-        <AccessFile contract={contract} account={account} />
+        <p style={{ color: "white" }}>
+          Account: {account ? account : "Not connected"}
+        </p>
+        <br />
+        <FileUpload account={account} contract={contract} />
+        {readOnlyContract && (
+          <Display contract={readOnlyContract} account={account} />
+        )}
+        {contract && <AccessFile contract={contract} account={account} />}
+        {readOnlyContract && (
+          <AccessList contract={readOnlyContract} account={account} />
+        )}
       </main>
-
-      {modalOpen && <Modal setModalOpen={setModalOpen} />}
-
-      <footer className="p-6 text-center">
-        <button
-          className="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700"
-          onClick={() => setModalOpen(true)}
-        >
-          Share
-        </button>
-      </footer>
     </div>
   );
 }

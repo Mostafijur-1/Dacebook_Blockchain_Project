@@ -39,7 +39,7 @@ contract Upload {
       }
   }
 
-  function display(address _user) external view returns(string[] memory){
+  function display(address _user)  external view returns(string[] memory){
       require(_user==msg.sender || ownership[_user][msg.sender],"You don't have access");
       return value[_user];
   }
@@ -47,6 +47,8 @@ contract Upload {
   function shareAccess() public view returns(Access[] memory){
       return accessList[msg.sender];
   }
+
+
+
 }
 
-// 0x5FbDB2315678afecb367f032d93F642f64180aa3
