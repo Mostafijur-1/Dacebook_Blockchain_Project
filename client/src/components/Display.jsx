@@ -13,8 +13,9 @@ const Display = ({ contract, account }) => {
 
     try {
       const userAddress = addressToCheck || account; // Use the input address if provided
+      console.log(userAddress);
 
-      const dataArray = await contract.display(userAddress); // Call the display function
+      const dataArray = await contract.display(userAddress, account); // Call the display function
 
       console.log(dataArray);
 

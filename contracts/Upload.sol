@@ -39,10 +39,11 @@ contract Upload {
       }
   }
 
-  function display(address _user)  external view returns(string[] memory){
-      require(_user==msg.sender || ownership[_user][msg.sender],"You don't have access");
-      return value[_user];
-  }
+ function display(address _user, address caller) external view returns(string[] memory) {
+    require(_user == caller || ownership[_user][caller], "You don't have access");
+    return value[_user];
+}
+
 
   function shareAccess() public view returns(Access[] memory){
       return accessList[msg.sender];
