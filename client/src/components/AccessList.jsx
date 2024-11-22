@@ -15,8 +15,8 @@ const AccessList = ({ contract, account }) => {
 
     try {
       if (contract && account) {
-        // Call the `shareAccess` function to fetch the access list
-        const list = await contract.shareAccess();
+        const list = await contract.shareAccess(account);
+        console.log(list);
         setAccessList(list);
       } else {
         setError("Contract or account not available.");
@@ -55,9 +55,8 @@ const AccessList = ({ contract, account }) => {
             <ul className="mt-4">
               {accessList.map((access, index) => (
                 <li key={index} className="text-gray-300 mt-2">
-                  Address: {access.userAddress} <br />
-                  Access Type: {access.accessType}{" "}
-                  {/* Adjust based on your contract's Access structure */}
+                  Address: {access.user} <br />
+                  Access: {access.access ? "true" : "false"}{" "}
                 </li>
               ))}
             </ul>

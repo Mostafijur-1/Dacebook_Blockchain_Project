@@ -1,14 +1,16 @@
 import { useState } from "react";
-import PropTypes from "prop-types"; // Import PropTypes
+import PropTypes from "prop-types";
 import axios from "axios";
 import { ethers } from "ethers";
 
 const FileUpload = ({ contract, account }) => {
   const [file, setFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (file) {
+      setIsUploading(true);
       try {
         const formData = new FormData();
         formData.append("file", file);
@@ -25,29 +27,23 @@ const FileUpload = ({ contract, account }) => {
           },
         });
 
-        // const ImgHash = `https://gateway.pinata.cloud/ipfs/${resFile.data.IpfsHash}`;
         const ImgHash = `${resFile.data.IpfsHash}`;
-
         await contract.add(account, ImgHash);
-        // console.log(ImgHash);
-        alert("Successfully Image Uploaded");
 
+        alert("File successfully uploaded!");
         setFile(null);
       } catch (e) {
-        console.log("Unable to upload image to Pinata:", e);
+        console.log("Unable to upload file:", e);
+        alert("Failed to upload the file. Please try again.");
+      } finally {
+        setIsUploading(false);
       }
     }
   };
 
   const retrieveFile = (e) => {
     const data = e.target.files[0];
-    const reader = new window.FileReader();
-    reader.readAsArrayBuffer(data);
-    reader.onloadend = () => {
-      setFile(e.target.files[0]);
-    };
-
-    e.preventDefault();
+    setFile(data);
   };
 
   return (
@@ -67,17 +63,46 @@ const FileUpload = ({ contract, account }) => {
 
         <button
           type="submit"
-          disabled={!file}
-          className="upload mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          disabled={!file || isUploading}
+          className={`upload mt-4 px-4 py-2 rounded-lg text-white transition-all ${
+            isUploading
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          Upload
+          {isUploading ? (
+            <span className="flex items-center gap-2">
+              <svg
+                className="w-5 h-5 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+              </svg>
+              Uploading...
+            </span>
+          ) : (
+            "Upload"
+          )}
         </button>
       </form>
     </div>
   );
 };
 
-// Add PropTypes validation
 FileUpload.propTypes = {
   contract: PropTypes.instanceOf(ethers.Contract),
   account: PropTypes.string.isRequired,

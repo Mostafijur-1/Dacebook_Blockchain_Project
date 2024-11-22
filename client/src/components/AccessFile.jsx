@@ -6,19 +6,17 @@ const AccessFile = ({ contract, account }) => {
   const [addressToAllow, setAddressToAllow] = useState(""); // Address to give or revoke access
   const [accessMessage, setAccessMessage] = useState(null); // Success or error message
   const [loading, setLoading] = useState(false); // Loading state
+  const [currentAction, setCurrentAction] = useState(""); // Tracks current action (grant or revoke)
 
   const grantAccess = async () => {
     setLoading(true);
     setAccessMessage(null);
+    setCurrentAction("granting");
 
     try {
       if (contract && account && addressToAllow) {
-        // Call the `allow` function to grant access
-        const transaction = await contract.allow(addressToAllow, {
-          gasLimit: ethers.toQuantity(100000), // Set an appropriate gas limit here
-        });
+        await contract.allow(addressToAllow, account);
 
-        await transaction.wait(); // Wait for transaction to be mined
         setAccessMessage(`Access granted to ${addressToAllow}`);
       } else {
         setAccessMessage("Please provide a valid address to grant access.");
@@ -28,21 +26,19 @@ const AccessFile = ({ contract, account }) => {
       setAccessMessage("An error occurred while granting access.");
     } finally {
       setLoading(false);
+      setCurrentAction("");
     }
   };
 
   const disallowAccess = async () => {
     setLoading(true);
     setAccessMessage(null);
+    setCurrentAction("revoking");
 
     try {
       if (contract && account && addressToAllow) {
-        // Call the `disallow` function to revoke access
-        const transaction = await contract.disallow(addressToAllow, {
-          gasLimit: ethers.toQuantity(100000), // Set an appropriate gas limit here
-        });
+        await contract.disallow(addressToAllow, account);
 
-        await transaction.wait(); // Wait for transaction to be mined
         setAccessMessage(`Access revoked from ${addressToAllow}`);
       } else {
         setAccessMessage("Please provide a valid address to revoke access.");
@@ -52,6 +48,7 @@ const AccessFile = ({ contract, account }) => {
       setAccessMessage("An error occurred while revoking access.");
     } finally {
       setLoading(false);
+      setCurrentAction("");
     }
   };
 
@@ -68,27 +65,100 @@ const AccessFile = ({ contract, account }) => {
         value={addressToAllow}
         onChange={(e) => setAddressToAllow(e.target.value)}
         className="mt-4 p-2 w-full rounded-lg bg-gray-700 text-white"
+        disabled={loading} // Disable input when loading
       />
 
       <div className="flex justify-between mt-4">
         <button
-          className="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700"
+          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+            loading && currentAction === "granting"
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
           onClick={grantAccess}
-          disabled={loading} // Disable button while loading
+          disabled={loading}
+          title="Grant access to this address"
         >
-          {loading ? "Granting Access..." : "Grant Access"}
+          {loading && currentAction === "granting" ? (
+            <>
+              <svg
+                className="w-4 h-4 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
+              </svg>
+              Granting...
+            </>
+          ) : (
+            "Grant Access"
+          )}
         </button>
 
         <button
-          className="bg-red-600 px-4 py-2 rounded-lg hover:bg-red-700"
+          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+            loading && currentAction === "revoking"
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-red-600 hover:bg-red-700"
+          }`}
           onClick={disallowAccess}
-          disabled={loading} // Disable button while loading
+          disabled={loading}
+          title="Revoke access for this address"
         >
-          {loading ? "Revoking Access..." : "Revoke Access"}
+          {loading && currentAction === "revoking" ? (
+            <>
+              <svg
+                className="w-4 h-4 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
+              </svg>
+              Revoking...
+            </>
+          ) : (
+            "Revoke Access"
+          )}
         </button>
       </div>
 
-      {accessMessage && <p className="mt-4 text-green-500">{accessMessage}</p>}
+      {accessMessage && (
+        <p
+          className={`mt-4 ${
+            accessMessage.includes("granted")
+              ? "text-green-500"
+              : "text-red-500"
+          }`}
+        >
+          {accessMessage}
+        </p>
+      )}
     </div>
   );
 };

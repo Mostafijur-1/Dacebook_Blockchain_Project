@@ -1,5 +1,5 @@
 import { useState } from "react";
-import PropTypes from "prop-types"; // Import PropTypes
+import PropTypes from "prop-types";
 import { ethers } from "ethers";
 
 const Display = ({ contract, account }) => {
@@ -13,11 +13,7 @@ const Display = ({ contract, account }) => {
 
     try {
       const userAddress = addressToCheck || account; // Use the input address if provided
-      console.log(userAddress);
-
       const dataArray = await contract.display(userAddress, account); // Call the display function
-
-      console.log(dataArray);
 
       if (dataArray.length > 0) {
         const images = dataArray.map((item, i) => (
@@ -29,8 +25,8 @@ const Display = ({ contract, account }) => {
           >
             <img
               src={`https://chocolate-managing-piranha-401.mypinata.cloud/ipfs/${item}`}
-              alt={`Image ${i + 1}`}
-              className="w-96 h-52 rounded-lg border border-gray-700"
+              alt={`Click to open file ${i + 1}`}
+              className="w-50 h-40 rounded-lg border border-gray-700 object-contain"
             />
           </a>
         ));
@@ -66,16 +62,47 @@ const Display = ({ contract, account }) => {
       />
 
       <button
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-600"
+        className={`mt-4 px-4 py-2 rounded-lg text-white ${
+          loading
+            ? "bg-gray-600 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
+        }`}
         onClick={getData}
         disabled={loading} // Disable button when loading
+        title={loading ? "Fetching data..." : "Click to retrieve files"}
       >
-        {loading ? "Loading..." : "Get Data"}
+        {loading ? (
+          <span className="flex items-center gap-2">
+            <svg
+              className="w-4 h-4 animate-spin"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              ></path>
+            </svg>
+            Loading...
+          </span>
+        ) : (
+          "Get Data"
+        )}
       </button>
 
       <div className="mt-4">
         {data.length > 0 ? (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {data}
           </div>
         ) : (

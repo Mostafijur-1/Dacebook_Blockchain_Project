@@ -16,25 +16,25 @@ contract Upload {
   function add(address _user,string memory url) external {
       value[_user].push(url);
   }
-  function allow(address user) external {//def
-      ownership[msg.sender][user]=true; 
-      if(previousData[msg.sender][user]){
-         for(uint i=0;i<accessList[msg.sender].length;i++){
-             if(accessList[msg.sender][i].user==user){
-                  accessList[msg.sender][i].access=true; 
+  function allow(address user,address caller) external {//def
+      ownership[caller][user]=true; 
+      if(previousData[caller][user]){
+         for(uint i=0;i<accessList[caller].length;i++){
+             if(accessList[caller][i].user==user){
+                  accessList[caller][i].access=true; 
              }
          }
       }else{
-          accessList[msg.sender].push(Access(user,true));  
-          previousData[msg.sender][user]=true;  
+          accessList[caller].push(Access(user,true));  
+          previousData[caller][user]=true;  
       }
     
   }
-  function disallow(address user) public{
-      ownership[msg.sender][user]=false;
-      for(uint i=0;i<accessList[msg.sender].length;i++){
-          if(accessList[msg.sender][i].user==user){ 
-              accessList[msg.sender][i].access=false;  
+  function disallow(address user,address caller) public{
+      ownership[caller][user]=false;
+      for(uint i=0;i<accessList[caller].length;i++){
+          if(accessList[caller][i].user==user){ 
+              accessList[caller][i].access=false;  
           }
       }
   }
@@ -45,8 +45,8 @@ contract Upload {
 }
 
 
-  function shareAccess() public view returns(Access[] memory){
-      return accessList[msg.sender];
+  function shareAccess(address caller) public view returns(Access[] memory){
+      return accessList[caller];
   }
 
 
