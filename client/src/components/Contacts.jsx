@@ -1,30 +1,33 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import MessengerABI from "../artifacts/contracts/Messenger.sol/Messenger.json"
-
+import MessengerABI from "../artifacts/contracts/Messenger.sol/Messenger.json";
+import PropTypes from "prop-types";
 
 const Contacts = ({ user, setSelectedContact }) => {
   const [contacts, setContacts] = useState([]);
 
-  const contractAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+  const contractAddress = import.meta.env.VITE_APP_CONTRACT_ADDRESS;
 
   useEffect(() => {
     const loadContacts = async () => {
       let provider;
       if (window.ethereum == null) {
-          console.log("MetaMask not installed; using read-only defaults")
-          provider = ethers.getDefaultProvider()
-      
+        console.log("MetaMask not installed; using read-only defaults");
+        provider = ethers.getDefaultProvider();
       } else {
-          provider = new ethers.BrowserProvider(window.ethereum);
+        provider = new ethers.BrowserProvider(window.ethereum);
       }
-      const contract = new ethers.Contract(contractAddress, MessengerABI, provider);
+      const contract = new ethers.Contract(
+        contractAddress,
+        MessengerABI,
+        provider
+      );
       const allContacts = await contract.getAllConnectedContacts();
       setContacts(allContacts);
     };
 
     loadContacts();
-  }, []);
+  }, [contractAddress]);
 
   return (
     <div>
@@ -38,6 +41,11 @@ const Contacts = ({ user, setSelectedContact }) => {
       </ul>
     </div>
   );
+};
+
+Contacts.propTypes = {
+  user: PropTypes.object,
+  setSelectedContact: PropTypes.func,
 };
 
 export default Contacts;

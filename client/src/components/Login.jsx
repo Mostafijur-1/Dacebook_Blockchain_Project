@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import MessengerABI from "../artifacts/contracts/Messenger.sol/Messenger.json"
-
+import MessengerABI from "../artifacts/contracts/Messenger.sol/Messenger.json";
 
 const Contacts = ({ user, setSelectedContact }) => {
   const [contacts, setContacts] = useState([]);
@@ -12,13 +11,16 @@ const Contacts = ({ user, setSelectedContact }) => {
     const loadContacts = async () => {
       let provider;
       if (window.ethereum == null) {
-          console.log("MetaMask not installed; using read-only defaults")
-          provider = ethers.getDefaultProvider()
-      
+        console.log("MetaMask not installed; using read-only defaults");
+        provider = ethers.getDefaultProvider();
       } else {
-          provider = new ethers.BrowserProvider(window.ethereum);
+        provider = new ethers.BrowserProvider(window.ethereum);
       }
-      const contract = new ethers.Contract(contractAddress, MessengerABI, provider);
+      const contract = new ethers.Contract(
+        contractAddress,
+        MessengerABI,
+        provider
+      );
       const allContacts = await contract.getAllConnectedContacts();
       setContacts(allContacts);
     };

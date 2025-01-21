@@ -1,39 +1,42 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import MessengerABI from "../artifacts/contracts/Messenger.sol/Messenger.json"
+import MessengerABI from "../artifacts/contracts/Messenger.sol/Messenger.json";
+import PropTypes from "prop-types";
 
 const Chat = ({ user, selectedContact }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
 
-  const contractAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+  const contractAddress = import.meta.env.VITE_APP_CONTRACT_ADDRESS;
 
   useEffect(() => {
     const loadMessages = async () => {
-     let provider;
-     if (window.ethereum == null) {
-         console.log("MetaMask not installed; using read-only defaults")
-         provider = ethers.getDefaultProvider()
-     
-     } else {
-         provider = new ethers.BrowserProvider(window.ethereum);
-     }
-      const contract = new ethers.Contract(contractAddress, MessengerABI, provider);
+      let provider;
+      if (window.ethereum == null) {
+        console.log("MetaMask not installed; using read-only defaults");
+        provider = ethers.getDefaultProvider();
+      } else {
+        provider = new ethers.BrowserProvider(window.ethereum);
+      }
+      const contract = new ethers.Contract(
+        contractAddress,
+        MessengerABI,
+        provider
+      );
       const allMessages = await contract.getMessages(selectedContact.Address);
       setMessages(allMessages);
     };
 
     loadMessages();
-  }, [selectedContact]);
+  }, [selectedContact, contractAddress]);
 
   const sendMessage = async () => {
     let provider;
     if (window.ethereum == null) {
-        console.log("MetaMask not installed; using read-only defaults")
-        provider = ethers.getDefaultProvider()
-    
+      console.log("MetaMask not installed; using read-only defaults");
+      provider = ethers.getDefaultProvider();
     } else {
-        provider = new ethers.BrowserProvider(window.ethereum);
+      provider = new ethers.BrowserProvider(window.ethereum);
     }
     const signer = provider.getSigner();
     const contract = new ethers.Contract(contractAddress, MessengerABI, signer);
@@ -48,7 +51,10 @@ const Chat = ({ user, selectedContact }) => {
       <div>
         {messages.map((msg, index) => (
           <div key={index}>
-            <strong>{msg.from === user.address ? "You" : selectedContact.Name}:</strong> {msg.message}
+            <strong>
+              {msg.from === user.address ? "You" : selectedContact.Name}:
+            </strong>{" "}
+            {msg.message}
           </div>
         ))}
       </div>
@@ -61,6 +67,11 @@ const Chat = ({ user, selectedContact }) => {
       <button onClick={sendMessage}>Send</button>
     </div>
   );
+};
+
+Chat.propTypes = {
+  user: PropTypes.object,
+  selectedContact: PropTypes.object,
 };
 
 export default Chat;
