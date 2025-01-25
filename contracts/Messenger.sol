@@ -23,6 +23,7 @@ contract Messenger {
     mapping(address => bytes32) private addressToPass;
     mapping(address => address[]) private userConnections;
     mapping(address => mapping(address=>bool)) private isConnected; // check if connected now
+    mapping(string => address) private nameToAdd;
 
     event newMessage(address indexed _receiver, Message _message);
 
@@ -65,6 +66,7 @@ contract Messenger {
         string calldata _plainPass
     ) public {
         require(addToAcc[msg.sender].Address == address(0), "User already registered");
+        require(nameToAdd[_name] == address(0), "Username not available");
         Account memory newAcc = Account({
             Name: _name,
             Address: msg.sender,
@@ -74,6 +76,7 @@ contract Messenger {
         addressToPass[msg.sender] = keccak256(abi.encodePacked(_plainPass));
         addToAcc[msg.sender] = newAcc;
         addressToBool[msg.sender] = true;
+        nameToAdd[_name] = msg.sender;
     }
 
     function getMessages(address _msgOf) public view returns (Message[] memory) {
@@ -125,5 +128,11 @@ contract Messenger {
         // console.log(isConnected[msg.sender][_address]);
         delete allMessages[msg.sender][_address];
         return true;
+    } 
+
+    function searchUser(string calldata _name) public view returns(Account memory){
+        require(nameToAdd[_name]!=address(0),"No user found");
+        address user = nameToAdd[_name];
+        return addToAcc[user];
     } 
 }
