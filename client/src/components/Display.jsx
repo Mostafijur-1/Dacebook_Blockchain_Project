@@ -3,17 +3,18 @@ import PropTypes from "prop-types";
 import { ethers } from "ethers";
 
 const Display = ({ contract, account }) => {
-  const [data, setData] = useState([]); // Data to store the images
-  const [loading, setLoading] = useState(false); // Loading state
-  const [addressToCheck, setAddressToCheck] = useState(""); // Address input
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [addressToCheck, setAddressToCheck] = useState("");
 
   const getData = async () => {
-    setLoading(true); // Set loading to true when fetching data
+    setLoading(true);
     setData([]); // Reset the data state before fetching
+    // console.log("contract", contract);
 
     try {
       const userAddress = addressToCheck || account; // Use the input address if provided
-      const dataArray = await contract.display(userAddress, account); // Call the display function
+      const dataArray = await contract.display(userAddress, account);
 
       if (dataArray.length > 0) {
         const images = dataArray.map((item, i) => (
@@ -41,7 +42,7 @@ const Display = ({ contract, account }) => {
           "An error occurred while fetching the data. Please try again."
       );
     } finally {
-      setLoading(false); // Set loading to false after the fetch attempt
+      setLoading(false);
     }
   };
 
@@ -68,7 +69,7 @@ const Display = ({ contract, account }) => {
             : "bg-blue-600 hover:bg-blue-700"
         }`}
         onClick={getData}
-        disabled={loading} // Disable button when loading
+        disabled={loading}
         title={loading ? "Fetching data..." : "Click to retrieve files"}
       >
         {loading ? (
@@ -118,8 +119,8 @@ const Display = ({ contract, account }) => {
 };
 
 Display.propTypes = {
-  contract: PropTypes.instanceOf(ethers.Contract), // Contract instance
-  account: PropTypes.string.isRequired, // Account address
+  contract: PropTypes.instanceOf(ethers.Contract).isRequired,
+  account: PropTypes.string.isRequired,
 };
 
 export default Display;

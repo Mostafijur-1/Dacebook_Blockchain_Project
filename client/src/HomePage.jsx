@@ -4,9 +4,15 @@ import PropTypes from "prop-types";
 
 import Display from "./components/Display";
 import FileUpload from "./components/FileUpload";
-import Test from "./components/Test";
 import Chat from "./components/Chat";
-const HomePage = ({ contractWithSigner, account }) => {
+import Register from "./components/Register";
+const HomePage = ({
+  contractUploadReadOnly,
+  contractUploadWithSigner,
+  contractMessageReadOnly,
+  contractMessageWithSigner,
+  account,
+}) => {
   return (
     <div className="justify-center items-center flex flex-col gap-10">
       <div className="">
@@ -28,8 +34,8 @@ const HomePage = ({ contractWithSigner, account }) => {
               </Link>
             </li>
             <li>
-              <Link to="/test" className="text-blue-500 hover:underline">
-                Test
+              <Link to="/register" className="text-blue-500 hover:underline">
+                Register
               </Link>
             </li>
             <li>
@@ -53,13 +59,38 @@ const HomePage = ({ contractWithSigner, account }) => {
         {/* Route Definitions */}
         <Routes>
           <Route path="/" element={<h1>Welcome to the Home Page!</h1>} />
-          <Route path="/test" element={<Test />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/display" element={<Display />} />
+          <Route
+            path="/register"
+            element={
+              <Register
+                contractWithSigner={contractMessageWithSigner}
+                account={account}
+              />
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <Chat
+                contractReadOnly={contractMessageReadOnly}
+                contractWithSigner={contractMessageWithSigner}
+                account={account}
+              />
+            }
+          />
+          <Route
+            path="/display"
+            element={
+              <Display contract={contractUploadReadOnly} account={account} />
+            }
+          />
           <Route
             path="/upload"
             element={
-              <FileUpload contract={contractWithSigner} account={account} />
+              <FileUpload
+                contract={contractUploadWithSigner}
+                account={account}
+              />
             }
           />
         </Routes>
@@ -71,7 +102,9 @@ const HomePage = ({ contractWithSigner, account }) => {
 export default HomePage;
 
 HomePage.propTypes = {
-  readOnlyContract: PropTypes.instanceOf(ethers.Contract),
-  contractWithSigner: PropTypes.instanceOf(ethers.Contract),
+  contractUploadReadOnly: PropTypes.instanceOf(ethers.Contract),
+  contractUploadWithSigner: PropTypes.instanceOf(ethers.Contract),
+  contractMessageReadOnly: PropTypes.instanceOf(ethers.Contract),
+  contractMessageWithSigner: PropTypes.instanceOf(ethers.Contract),
   account: PropTypes.string.isRequired,
 };
