@@ -67,7 +67,9 @@ contract Messenger {
         string calldata _name,
         string calldata _plainPass
     ) public {
+
         require(addToAcc[msg_sender].Address == address(0), "User already registered");
+
         require(nameToAdd[_name] == address(0), "Username not available");
         Account memory newAcc = Account({
             Name: _name,
@@ -75,10 +77,12 @@ contract Messenger {
             proPic: "",
             passwordHash: keccak256(abi.encodePacked(_plainPass))
         });
+
         addressToPass[msg_sender] = keccak256(abi.encodePacked(_plainPass));
         addToAcc[msg_sender] = newAcc;
         addressToBool[msg_sender] = true;
         nameToAdd[_name] = msg_sender;
+
     }
 
     function getMessages(address msg_sender,address _msgOf) public view returns (Message[] memory) {
@@ -137,4 +141,6 @@ contract Messenger {
         address user = nameToAdd[_name];
         return addToAcc[user];
     } 
+
 }
+

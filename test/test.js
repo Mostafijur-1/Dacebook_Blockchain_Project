@@ -30,14 +30,37 @@ describe("Messenger", function () {
       const hashedPassword = await messenger.getHashedPass(user1.address);
       expect(hashedPassword).to.not.equal(password); // Ensure the password is hashed
     });
+
+    it("Should not register users with duplicate name",async function () {
+      await messenger.connect(user1).register("Bablu", "xyz");
+      await expect(messenger.connect(user2).register("Bablu", "tyu"))
+          .to.be.revertedWith("Username not available");
+    })
   });
+
+  describe("Search User",function(){
+    beforeEach(async function () {
+      await messenger.connect(user1).register("Ali", "123");
+      await messenger.connect(user2).register("Bablu", "456");
+    });
+
+    it("Should return the user details correctly", async function () {
+      const user = await messenger.searchUser("Ali");
+      expect(user.Name).to.equal("Ali");
+    });
+
+    it("Should check if searched username exists", async function () {
+      await expect(messenger.searchUser("Alibaba"))
+          .to.be.revertedWith("No user found");
+    });
+  })
 
   describe("Message Sending", function () {
     beforeEach(async function () {
       await messenger.connect(user1).register("Alice", "password123");
       await messenger.connect(user2).register("Bob", "password456");
     });
-    
+
     it("should not send an empty message", async function () {
       await expect(messenger.connect(user1).send(user2.address, ""))
           .to.be.revertedWith("No message is sent");
@@ -75,13 +98,13 @@ describe("Messenger", function () {
 
   describe("Password Validation", function () {
     beforeEach(async function () {
-      await messenger.connect(user1).register("Alice", "password123");
+      await messenger.connect(user1).register("Ali", "123");
     });
 
     it("Should return true for correct password", async function () {
       const isValid = await messenger
         .connect(user1)
-        .checkPass("password123");
+        .checkPass("123");
       expect(isValid).to.be.true;
     });
 
