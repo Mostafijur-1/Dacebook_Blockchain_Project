@@ -13,20 +13,20 @@ const Chat = ({ contractReadOnly, contractWithSigner, account }) => {
   const [isLoadingNewAccount, setIsLoadingNewAccount] = useState(false);
 
   // Load contacts connected with the account
-  const loadContacts = async () => {
-    try {
-      const allContacts = await contractReadOnly.getAllConnectedContacts(
-        account
-      );
-      setContacts(allContacts);
-    } catch (error) {
-      console.error("Error loading contacts:", error);
-    }
-  };
 
   useEffect(() => {
+    const loadContacts = async () => {
+      try {
+        const allContacts = await contractReadOnly.getAllConnectedContacts(
+          account
+        );
+        setContacts(allContacts);
+      } catch (error) {
+        console.error("Error loading contacts:", error);
+      }
+    };
     loadContacts();
-  }, [contractReadOnly]);
+  }, [contractReadOnly, account]);
 
   // Load messages for the selected contact
   useEffect(() => {
@@ -46,7 +46,7 @@ const Chat = ({ contractReadOnly, contractWithSigner, account }) => {
     };
 
     loadMessages();
-  }, [selectedContact, contractReadOnly]);
+  }, [selectedContact, contractReadOnly, account]);
 
   // Send a message to the selected contact
   const sendMessageToContact = async () => {

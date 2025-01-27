@@ -45,7 +45,7 @@ const HomePage = ({
             </li>
             <li>
               <Link to="/display" className="text-blue-500 hover:underline">
-                See Files
+                Display Files
               </Link>
             </li>
             <li>
@@ -81,7 +81,9 @@ const HomePage = ({
           <Route
             path="/display"
             element={
-              <Display contract={contractUploadReadOnly} account={account} />
+              contractUploadReadOnly && (
+                <Display contract={contractUploadReadOnly} account={account} />
+              )
             }
           />
           <Route

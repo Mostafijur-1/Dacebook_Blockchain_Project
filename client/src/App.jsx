@@ -40,11 +40,14 @@ function App() {
           // console.log("Connected account:", address);
           setAccount(address);
 
-          const contractAddress = import.meta.env.VITE_APP_CONTRACT_ADDRESS;
+          const contractAddressUpload = import.meta.env
+            .VITE_APP_CONTRACT_ADDRESS_UPLOAD;
+          const contractAddressMessage = import.meta.env
+            .VITE_APP_CONTRACT_ADDRESS_MESSENGER;
 
           // Read-only contract for calls
           const readOnlyContract = new ethers.Contract(
-            contractAddress,
+            contractAddressUpload,
             Upload.abi,
             provider
           );
@@ -53,7 +56,7 @@ function App() {
 
           // Contract with signer for state-modifying functions
           const contractWithSigner = new ethers.Contract(
-            contractAddress,
+            contractAddressUpload,
             Upload.abi,
             signer
           );
@@ -62,7 +65,7 @@ function App() {
 
           //contract for message Read only
           const contractMessageReadOnly = new ethers.Contract(
-            contractAddress,
+            contractAddressMessage,
             Messenger.abi,
             provider
           );
@@ -70,7 +73,7 @@ function App() {
           // console.log("contractMessageReadOnly", contractMessageReadOnly);
           //contract for message with signer
           const contractMessageWithSigner = new ethers.Contract(
-            contractAddress,
+            contractAddressMessage,
             Messenger.abi,
             signer
           );

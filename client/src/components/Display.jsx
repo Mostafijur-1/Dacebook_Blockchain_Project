@@ -4,17 +4,19 @@ import { ethers } from "ethers";
 
 const Display = ({ contract, account }) => {
   const [data, setData] = useState([]);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [addressToCheck, setAddressToCheck] = useState("");
 
   const getData = async () => {
     setLoading(true);
     setData([]); // Reset the data state before fetching
-    // console.log("contract", contract);
 
     try {
       const userAddress = addressToCheck || account; // Use the input address if provided
+      console.log(contract);
       const dataArray = await contract.display(userAddress, account);
+      console.log(userAddress);
 
       if (dataArray.length > 0) {
         const images = dataArray.map((item, i) => (
@@ -37,10 +39,7 @@ const Display = ({ contract, account }) => {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      alert(
-        error.reason ||
-          "An error occurred while fetching the data. Please try again."
-      );
+      setError("Error fetching data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -106,6 +105,8 @@ const Display = ({ contract, account }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {data}
           </div>
+        ) : error ? (
+          <p className="text-gray-400 text-center mt-4">{error}</p>
         ) : (
           !loading && (
             <p className="text-gray-400 text-center mt-4">
