@@ -8,7 +8,7 @@ module.exports = {
       chainId: 1337,
     },
   },
-  defaultNetworkSettings: {},
+
   paths: {
     sources: "./contracts", // Make sure this is pointing to the correct contracts folder
     artifacts: "./client/src/artifacts", // Path for compiled artifacts

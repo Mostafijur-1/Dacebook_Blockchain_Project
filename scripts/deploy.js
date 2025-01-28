@@ -1,12 +1,22 @@
 const hre = require("hardhat");
 
 async function main() {
-  const Upload = await hre.ethers.getContractFactory("Upload");
-  const upload = await Upload.deploy();
+  // Deploy Upload contract
+  const Dacebook = await hre.ethers.getContractFactory("Dacebook");
+  const dacebook = await Dacebook.deploy();
+  await dacebook.waitForDeployment();
+  console.log("Dacebook contract deployed to:", dacebook.target);
 
-  await upload.waitForDeployment();
+  // Optional: Save the deployed contract addresses to a file
+  const fs = require("fs");
+  const deployedContracts = {
+    Dacebook: dacebook.target,
+  };
 
-  console.log("Contracts deployed to:", upload.target);
+  fs.writeFileSync(
+    "deployedContracts.json",
+    JSON.stringify(deployedContracts, null, 2)
+  );
 }
 
 main().catch((error) => {
