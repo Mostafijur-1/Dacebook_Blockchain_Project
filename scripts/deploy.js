@@ -2,22 +2,15 @@ const hre = require("hardhat");
 
 async function main() {
   // Deploy Upload contract
-  const Upload = await hre.ethers.getContractFactory("Upload");
-  const upload = await Upload.deploy();
-  await upload.waitForDeployment();
-  console.log("Upload contract deployed to:", upload.target);
-
-  // Deploy Messenger contract
-  const Messenger = await hre.ethers.getContractFactory("Messenger");
-  const messenger = await Messenger.deploy();
-  await messenger.waitForDeployment();
-  console.log("Messenger contract deployed to:", messenger.target);
+  const Dacebook = await hre.ethers.getContractFactory("Dacebook");
+  const dacebook = await Dacebook.deploy();
+  await dacebook.waitForDeployment();
+  console.log("Dacebook contract deployed to:", dacebook.target);
 
   // Optional: Save the deployed contract addresses to a file
   const fs = require("fs");
   const deployedContracts = {
-    Upload: upload.target,
-    Messenger: messenger.target,
+    Dacebook: dacebook.target,
   };
 
   fs.writeFileSync(
