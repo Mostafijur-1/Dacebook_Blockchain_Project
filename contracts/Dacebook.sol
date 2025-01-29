@@ -103,9 +103,9 @@ contract Dacebook {
     }
 
     // Get messages between two users
-    function getMessages(address _withUser) external view returns (Message[] memory) {
-        require(registered[msg.sender], "User not registered");
-        return messages[msg.sender][_withUser];
+    function getMessages(address msg_sender,address _withUser) external view returns (Message[] memory) {
+        require(registered[msg_sender], "User not registered");
+        return messages[msg_sender][_withUser];
     }
 
     // Add a friend

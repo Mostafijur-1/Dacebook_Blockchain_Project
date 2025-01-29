@@ -7,47 +7,40 @@ import Messenger from "./components/Messenger";
 
 const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
   return (
-    <div className="justify-center items-center flex flex-col gap-10 p-6">
+    <div className="flex flex-col items-center gap-10 p-6">
       {/* Header */}
       <header className="text-center">
-        <h1 className="text-3xl font-bold">Dacebook</h1>
-        <p className="text-sm mt-2">A Decentralized Private Social App</p>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-green-600">Dacebook</h1>
+        <p className="text-sm mt-2 text-gray-500">
+          A Decentralized Private Social App
+        </p>
+        <p className="mt-2 text-gray-700">
           Account:{" "}
-          <span className="font-mono">
+          <span className="font-mono text-blue-600">
             {account ? account : "Not connected"}
           </span>
         </p>
       </header>
 
-      {/* Navigation Links */}
-      <nav className="mb-6">
+      {/* Navigation */}
+      <nav className="mb-6 bg-gray-100 p-3 rounded-lg shadow">
         <ul className="flex space-x-6">
-          <li>
-            <Link to="/" className="text-blue-500 hover:underline">
-              Home
-            </Link>
-          </li>
-          <li>
-            <Link to="/register" className="text-blue-500 hover:underline">
-              Register/Login
-            </Link>
-          </li>
-          <li>
-            <Link to="/profile" className="text-blue-500 hover:underline">
-              Profile
-            </Link>
-          </li>
-          <li>
-            <Link to="/feed" className="text-blue-500 hover:underline">
-              Feed
-            </Link>
-          </li>
-          <li>
-            <Link to="/chat" className="text-blue-500 hover:underline">
-              Chat
-            </Link>
-          </li>
+          {[
+            { to: "/", label: "Home" },
+            { to: "/register", label: "Register/Login" },
+            { to: "/profile", label: "Profile" },
+            { to: "/feed", label: "Feed" },
+            { to: "/chat", label: "Chat" },
+          ].map(({ to, label }) => (
+            <li key={to}>
+              <Link
+                to={to}
+                className="text-blue-600 hover:text-blue-800 font-semibold transition"
+              >
+                {label}
+              </Link>
+            </li>
+          ))}
         </ul>
       </nav>
 
@@ -57,8 +50,9 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
           <Route
             path="/"
             element={
-              <h1 className="text-xl text-center">
-                Welcome to Decent DriveChat!
+              <h1 className="text-xl text-center text-gray-700">
+                Welcome to{" "}
+                <span className="font-bold text-green-600">Dacebook</span>!
               </h1>
             }
           />
@@ -75,7 +69,11 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
           <Route
             path="/feed"
             element={
-              <PostFeed contractReadOnly={contractReadOnly} account={account} />
+              <PostFeed
+                contractReadOnly={contractReadOnly}
+                contractWithSigner={contractWithSigner}
+                account={account}
+              />
             }
           />
           <Route
