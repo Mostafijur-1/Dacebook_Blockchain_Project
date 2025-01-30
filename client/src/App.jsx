@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
 import Dacebook from "./artifacts/contracts/Dacebook.sol/Dacebook.json";
+
 import HomePage from "./HomePage";
 
 function App() {
@@ -9,33 +10,27 @@ function App() {
   const [contractWithSigner, setContractWithSigner] = useState(null);
   const [account, setAccount] = useState(null);
 
+  // Load Ethereum provider and contract details
   useEffect(() => {
     const loadProvider = async () => {
       if (window.ethereum) {
         const provider = new ethers.BrowserProvider(window.ethereum);
 
-        // Handle account change
-        window.ethereum.on("accountsChanged", (accounts) => {
-          setAccount(accounts[0]);
+        window.ethereum.on("chainChanged", () => {
+          console.log("Chain changed");
+          window.location.reload();
         });
 
-        // Handle network change
-        window.ethereum.on("chainChanged", (chainId) => {
-          console.log(`Chain changed to ${chainId}`);
-          // Optionally handle network updates
+        window.ethereum.on("accountsChanged", () => {
+          console.log("Account changed");
+          window.location.reload();
         });
 
         try {
-          const network = await provider.getNetwork();
-          console.log("Connected to network:", network);
-        } catch (error) {
-          console.error("Failed to get network:", error);
-        }
-
-        try {
-          await provider.send("eth_requestAccounts", []);
-
+          const acc = await provider.send("eth_requestAccounts", []);
+          setAccount(acc[0]);
           const signer = await provider.getSigner();
+
           const contractAddress = import.meta.env.VITE_APP_CONTRACT_ADDRESS;
 
           const readOnlyContract = new ethers.Contract(
@@ -52,6 +47,9 @@ function App() {
             signer
           );
           setContractWithSigner(contractWithSigner);
+          // console.log(readOnlyContract);
+          // console.log(contractWithSigner);
+          // console.log(account);
         } catch (error) {
           console.error("Failed to connect to wallet:", error);
         }
@@ -61,14 +59,16 @@ function App() {
     };
 
     loadProvider();
-  }, []); // Use empty dependency array to run only once
+  }, [account]);
 
   return (
-    <HomePage
-      contractReadOnly={contractReadOnly}
-      contractWithSigner={contractWithSigner}
-      account={account}
-    />
+    <>
+      <HomePage
+        contractReadOnly={contractReadOnly}
+        contractWithSigner={contractWithSigner}
+        account={account}
+      />
+    </>
   );
 }
 
