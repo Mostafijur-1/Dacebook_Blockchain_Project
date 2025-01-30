@@ -24,7 +24,8 @@ const PostFeed = ({ contractReadOnly, contractWithSigner, account }) => {
       {posts.map((post) => (
         <div key={post.id} className="p-4 border rounded">
           <p>{post.content}</p>
-          <small>{new Date(post.timestamp * 1000).toLocaleString()}</small>
+          {/* <small>{new Date(post.timestamp * 1000).toLocaleString()}</small> */}
+          <p>{post.timestamp}</p>
           <p>Likes: {post.likes}</p>
         </div>
       ))}
