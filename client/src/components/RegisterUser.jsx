@@ -4,7 +4,8 @@ import PropTypes from "prop-types";
 const RegisterUser = ({ contractWithSigner }) => {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-
+  // console.log(contractWithSigner);
+  
   const handleRegister = async () => {
     try {
       const tx = await contractWithSigner.register(name, password);

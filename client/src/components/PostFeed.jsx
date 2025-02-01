@@ -9,6 +9,8 @@ const PostFeed = ({ contractReadOnly, contractWithSigner, account }) => {
     const fetchPosts = async () => {
       if (account) {
         const data = await contractReadOnly.getUserPosts(account);
+        console.log(data);
+        
         setPosts(data);
       }
     };
