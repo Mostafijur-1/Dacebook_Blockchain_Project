@@ -6,9 +6,12 @@ const RegisterUser = ({ contractWithSigner }) => {
   const [profilePic, setProfilePic] = useState("");
   const [bio, setBio] = useState("");
   const [password, setPassword] = useState("");
-
+  // console.log(contractWithSigner);
+  
   const handleRegister = async () => {
     try {
+      console.log(name, password);
+      
       const tx = await contractWithSigner.register(
         name,
         profilePic,

@@ -13,7 +13,10 @@ function App() {
     const loadProvider = async () => {
       if (window.ethereum) {
         const provider = new ethers.BrowserProvider(window.ethereum);
-
+        const accounts = await provider.send("eth_requestAccounts", []);
+        if (accounts.length > 0) {
+          setAccount(accounts[0]); // Set the account immediately
+        }
         // Handle account change
         window.ethereum.on("accountsChanged", (accounts) => {
           setAccount(accounts[0]);
@@ -22,7 +25,6 @@ function App() {
         // Handle network change
         window.ethereum.on("chainChanged", (chainId) => {
           console.log(`Chain changed to ${chainId}`);
-          // Optionally handle network updates
         });
 
         try {
@@ -52,6 +54,9 @@ function App() {
             signer
           );
           setContractWithSigner(contractWithSigner);
+          // console.log(readOnlyContract);
+          // console.log(contractWithSigner);
+          
         } catch (error) {
           console.error("Failed to connect to wallet:", error);
         }
@@ -61,8 +66,12 @@ function App() {
     };
 
     loadProvider();
-  }, []); // Use empty dependency array to run only once
-
+  }, []);
+  if (!contractReadOnly || !contractWithSigner || !account) {
+    return <div>Loading...</div>;
+  }
+  // console.log(contractReadOnly, contractWithSigner);
+  
   return (
     <HomePage
       contractReadOnly={contractReadOnly}
