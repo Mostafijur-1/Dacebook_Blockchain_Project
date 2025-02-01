@@ -3,21 +3,12 @@ import PropTypes from "prop-types";
 
 const RegisterUser = ({ contractWithSigner }) => {
   const [name, setName] = useState("");
-  const [profilePic, setProfilePic] = useState("");
-  const [bio, setBio] = useState("");
   const [password, setPassword] = useState("");
   // console.log(contractWithSigner);
   
   const handleRegister = async () => {
     try {
-      console.log(name, password);
-      
-      const tx = await contractWithSigner.register(
-        name,
-        profilePic,
-        bio,
-        password
-      );
+      const tx = await contractWithSigner.register(name, password);
       await tx.wait();
       alert("User registered successfully!");
     } catch (error) {
@@ -34,17 +25,7 @@ const RegisterUser = ({ contractWithSigner }) => {
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <input
-        type="text"
-        placeholder="Profile Pic URL"
-        value={profilePic}
-        onChange={(e) => setProfilePic(e.target.value)}
-      />
-      <textarea
-        placeholder="Bio"
-        value={bio}
-        onChange={(e) => setBio(e.target.value)}
-      />
+
       <input
         type="password"
         placeholder="Password"

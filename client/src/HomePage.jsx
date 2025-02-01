@@ -1,9 +1,10 @@
 import { Routes, Route, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import RegisterUser from "./components/RegisterUser";
-import { Profile } from "./components/Profile";
+import Profile from "./components/Profile";
 import PostFeed from "./components/PostFeed";
 import Messenger from "./components/Messenger";
+import NewsFeed from "./components/NewsFeed";
 
 const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
   return (
@@ -27,9 +28,9 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
         <ul className="flex space-x-6">
           {[
             { to: "/", label: "Home" },
-            { to: "/register", label: "Register/Login" },
+            { to: "/register", label: "Register" },
             { to: "/profile", label: "Profile" },
-            { to: "/feed", label: "Feed" },
+
             { to: "/chat", label: "Chat" },
           ].map(({ to, label }) => (
             <li key={to}>
@@ -47,15 +48,7 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
       {/* Routes */}
       <div className="w-full max-w-4xl">
         <Routes>
-          <Route
-            path="/"
-            element={
-              <h1 className="text-xl text-center text-gray-700">
-                Welcome to{" "}
-                <span className="font-bold text-green-600">Dacebook</span>!
-              </h1>
-            }
-          />
+          <Route path="/" element={<NewsFeed />} />
           <Route
             path="/register"
             element={<RegisterUser contractWithSigner={contractWithSigner} />}
@@ -66,16 +59,7 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
               <Profile contractReadOnly={contractReadOnly} account={account} />
             }
           />
-          <Route
-            path="/feed"
-            element={
-              <PostFeed
-                contractReadOnly={contractReadOnly}
-                contractWithSigner={contractWithSigner}
-                account={account}
-              />
-            }
-          />
+
           <Route
             path="/chat"
             element={
