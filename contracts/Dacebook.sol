@@ -35,26 +35,37 @@ contract Dacebook {
     mapping(address => mapping(uint256 => mapping(address => bool))) public isLiked; // user -> postID -> liker -> bool
     uint256 private ucount = 0;
 
-    event UserRegistered(address indexed user, string name);
+    event UserRegistered(address indexed userAddress, string name);
+    event ProfileUpdated(address indexed userAddress, string profilePic, string bio);
     event NewPost(address indexed author, uint256 postId);
     event NewMessage(address indexed sender, address indexed receiver, string content);
     event FileUploaded(address indexed user, string fileUrl);
 
-    // Register a new user
-    function register(string memory _name, string memory _profilePic, string memory _bio, string memory _password) external {
+ // Register with only name and password
+    function register(string memory _name, string memory _password) external {
         require(!registered[msg.sender], "User already registered");
         ucount++;
-        console.log(ucount);
         users[msg.sender] = User({
             name: _name,
-            profilePic: _profilePic,
+            profilePic: "", // Empty initially
             userAddress: msg.sender,
-            bio: _bio,
+            bio: "", // Empty initially
             passwordHash: keccak256(abi.encodePacked(_password)),
             friends: new address[](0)
         });
         registered[msg.sender] = true;
         emit UserRegistered(msg.sender, _name);
+    }
+
+    // Update profile with additional information
+    function updateProfile(string memory _profilePic, string memory _bio) external {
+        require(registered[msg.sender], "User not registered");
+
+        // Update the user's profile
+        users[msg.sender].profilePic = _profilePic;
+        users[msg.sender].bio = _bio;
+
+        emit ProfileUpdated(msg.sender, _profilePic, _bio);
     }
 
     // Create a new post

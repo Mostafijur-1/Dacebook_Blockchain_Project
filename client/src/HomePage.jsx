@@ -4,7 +4,6 @@ import RegisterUser from "./components/RegisterUser";
 import Profile from "./components/Profile";
 import PostFeed from "./components/PostFeed";
 import Messenger from "./components/Messenger";
-import NewsFeed from "./components/NewsFeed";
 
 const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
   return (
@@ -48,7 +47,16 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
       {/* Routes */}
       <div className="w-full max-w-4xl">
         <Routes>
-          <Route path="/" element={<NewsFeed />} />
+          <Route
+            path="/"
+            element={
+              <PostFeed
+                contractReadOnly={contractReadOnly}
+                contractWithSigner={contractWithSigner}
+                account={account}
+              />
+            }
+          />
           <Route
             path="/register"
             element={<RegisterUser contractWithSigner={contractWithSigner} />}
@@ -56,7 +64,11 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
           <Route
             path="/profile"
             element={
-              <Profile contractReadOnly={contractReadOnly} account={account} />
+              <Profile
+                contractReadOnly={contractReadOnly}
+                contractWithSigner={contractWithSigner}
+                account={account}
+              />
             }
           />
 
