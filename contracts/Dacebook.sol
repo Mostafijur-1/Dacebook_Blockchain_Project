@@ -12,7 +12,7 @@ contract Dacebook {
         address[] friends;
     }
 
-    struct Comment{
+    struct Comment {
         string text;
         address userAddress;
     }
@@ -28,30 +28,30 @@ contract Dacebook {
     }
 
     mapping(address => User) private users; // Mapping of user addresses to User structs
-    mapping(address => bool) private registered; 
-    mapping(address => Post[]) private userPosts; 
+    mapping(address => bool) private registered;
+    mapping(address => Post[]) private userPosts;
     mapping(address => mapping(address => bool)) private friendships;
-    mapping(address => mapping(address => bool)) private wasFriends;// checks if they were ever friends. 
+    mapping(address => mapping(address => bool)) private wasFriends; // checks if they were ever friends.
     mapping(address => mapping(uint256 => mapping(address => bool))) public isLiked; // user -> postID -> liker -> bool
-    uint256 private ucount = 0;
+    uint256 private totalPosts = 0;
 
     event UserRegistered(address indexed userAddress, string name);
     event ProfileUpdated(address indexed userAddress, string profilePic, string bio);
     event NewPost(address indexed author, uint256 postId);
+    event PostDeleted(address indexed author, uint256 postId);
     event NewMessage(address indexed sender, address indexed receiver, string content);
     event FileUploaded(address indexed user, string fileUrl);
 
- // Register with only name and password
+    // Register with only name and password
     function register(string memory _name, string memory _password) external {
         require(!registered[msg.sender], "User already registered");
-        ucount++;
         users[msg.sender] = User({
             name: _name,
             profilePic: "", // Empty initially
             userAddress: msg.sender,
             bio: "", // Empty initially
             passwordHash: keccak256(abi.encodePacked(_password)),
-            friends: new address[](0)
+            friends: new address[](0) // Empty initially
         });
         registered[msg.sender] = true;
         emit UserRegistered(msg.sender, _name);
@@ -81,16 +81,30 @@ contract Dacebook {
         newPost.likes = 0;
         newPost.uploads = _uploads;
 
+        totalPosts++; // Increment total post count
+
         emit NewPost(msg.sender, postId);
     }
 
+    // Delete a post
+    function deletePost(uint256 _postId) external {
+        require(registered[msg.sender], "User not registered");
+        require(_postId < userPosts[msg.sender].length, "Invalid post ID");
+        require(userPosts[msg.sender][_postId].author == msg.sender, "Not the post author");
+
+        // Remove the post
+        delete userPosts[msg.sender][_postId];
+        totalPosts--; // Decrement total post count
+
+        emit PostDeleted(msg.sender, _postId);
+    }
 
     // Like a post
     function toggleLikeonPost(address _author, uint256 _postId) external {
         require(registered[msg.sender], "User not registered");
         require(_postId < userPosts[_author].length, "Invalid post ID");
 
-        if(isLiked[_author][_postId][msg.sender])
+        if (isLiked[_author][_postId][msg.sender])
             userPosts[_author][_postId].likes--;
         else userPosts[_author][_postId].likes++;
 
@@ -98,46 +112,49 @@ contract Dacebook {
     }
 
     // Comment on a post
-    function commentOnPost(address _author, uint256 _postId, string memory _comment, address _commenter) external {
-        console.log(_postId);
+    function commentOnPost(address _author, uint256 _postId, string memory _comment) external {
         require(registered[msg.sender], "User not registered");
         require(_postId < userPosts[_author].length, "Invalid post ID");
-        userPosts[_author][_postId].comments.push( Comment(_comment, _commenter));
+        require(bytes(_comment).length > 0, "Comment cannot be empty");
+
+        userPosts[_author][_postId].comments.push(Comment(_comment, msg.sender));
     }
 
-    
+    // Get post count for a specific user
+    function getPostCount(address _user) public view returns (uint256) {
+        require(registered[_user], "User not registered");
+        return userPosts[_user].length;
+    }
 
-    // Add a friend
+    // Get total posts count for all users
+    function getTotalPostCount() public view returns (uint256) {
+        return totalPosts;
+    }
+
+    // Add or remove a friend
     function toggleFriend(address _friend) external {
         require(registered[msg.sender], "User not registered");
         require(registered[_friend], "Friend not registered");
 
-        if(!friendships[msg.sender][_friend]){
-            if(!wasFriends[msg.sender][_friend]){
+        if (!friendships[msg.sender][_friend]) {
+            if (!wasFriends[msg.sender][_friend]) {
                 wasFriends[msg.sender][_friend] = true;
                 users[msg.sender].friends.push(_friend);
-            } 
+            }
         }
 
         friendships[msg.sender][_friend] = !friendships[msg.sender][_friend];
-        
     }
 
     // Get user profile
     function getUserProfile(address _user) external view returns (User memory) {
         require(registered[_user], "User not registered");
-        // User memory x = users[_user];
-        console.log(users[_user].name);
         return users[_user];
     }
 
     // Get a user's posts
     function getUserPosts(address _user) public view returns (Post[] memory) {
-        console.log(userPosts[_user].length);
         require(registered[_user], "User not registered");
-        require(userPosts[_user].length > 0, "Nothing posted yet");
-        // Post[] memory x;
-        // return x;
         return userPosts[_user];
     }
 
@@ -146,63 +163,63 @@ contract Dacebook {
         return friendships[_user1][_user2];
     }
 
-    function getFriends() view public returns(address[] memory){
+    // Get friends list
+    function getFriends() public view returns (address[] memory) {
         User memory user = users[msg.sender];
         uint count = 0;
         for (uint256 i = 0; i < user.friends.length; i++) {
-            // console.log(user.friends[i],areFriends(msg.sender, user.friends[i]));
-            if(areFriends(msg.sender, user.friends[i])){
+            if (areFriends(msg.sender, user.friends[i])) {
                 count++;
             }
-            // console.log(result[1]==address(0));
         }
 
         address[] memory result = new address[](count);
-
-        for (uint256 i = 0; i < count; i++) {
-            // console.log(user.friends[i],areFriends(msg.sender, user.friends[i]));
-            if(areFriends(msg.sender, user.friends[i])){
-                result[i] = user.friends[i];
+        uint index = 0;
+        for (uint256 i = 0; i < user.friends.length; i++) {
+            if (areFriends(msg.sender, user.friends[i])) {
+                result[index++] = user.friends[i];
             }
         }
-            console.log();
         return result;
     }
 
-    function getFeed() external view returns (Post[] memory) {
-        require(registered[msg.sender], "User not registered");
-        User memory user = users[msg.sender];
-        uint totalPosts = userPosts[msg.sender].length;
-        for (uint i = 0; i < user.friends.length; i++) {
-            if (friendships[msg.sender][user.friends[i]]) {
-                totalPosts += userPosts[user.friends[i]].length;
-            }
+   // Get posts (posts from user and friends)
+function getPosts(address _user) external view returns (Post[] memory) {
+    require(registered[_user], "User not registered");
+    User memory user = users[_user];
+    uint totalPostsCount = userPosts[_user].length;
+    for (uint i = 0; i < user.friends.length; i++) {
+        if (friendships[_user][user.friends[i]]) {
+            totalPostsCount += userPosts[user.friends[i]].length;
         }
-
-        Post[] memory feed = new Post[](totalPosts);
-        uint index = 0;
-
-        for (uint i = 0; i < userPosts[msg.sender].length; i++) {
-            feed[index++] = userPosts[msg.sender][i];
-        }
-
-        for (uint i = 0; i < user.friends.length; i++) {
-            if (friendships[msg.sender][user.friends[i]]) {
-                for (uint j = 0; j < userPosts[user.friends[i]].length; j++) {
-                    feed[index++] = userPosts[user.friends[i]][j];
-                }
-            }
-        }
-
-        for (uint i = 0; i < totalPosts - 1; i++) {
-            for (uint j = i + 1; j < totalPosts; j++) {
-                if (feed[i].timestamp < feed[j].timestamp) {
-                    Post memory temp = feed[i];
-                    feed[i] = feed[j];
-                    feed[j] = temp;
-                }
-            }
-        }
-        return feed;
     }
+
+    Post[] memory feed = new Post[](totalPostsCount);
+    uint index = 0;
+
+    for (uint i = 0; i < userPosts[_user].length; i++) {
+        feed[index++] = userPosts[_user][i];
+    }
+
+    for (uint i = 0; i < user.friends.length; i++) {
+        if (friendships[_user][user.friends[i]]) {
+            for (uint j = 0; j < userPosts[user.friends[i]].length; j++) {
+                feed[index++] = userPosts[user.friends[i]][j];
+            }
+        }
+    }
+
+    // Sorting posts by timestamp (newest first)
+    for (uint i = 0; i < totalPostsCount - 1; i++) {
+        for (uint j = i + 1; j < totalPostsCount; j++) {
+            if (feed[i].timestamp < feed[j].timestamp) {
+                Post memory temp = feed[i];
+                feed[i] = feed[j];
+                feed[j] = temp;
+            }
+        }
+    }
+
+    return feed;
+}
 }

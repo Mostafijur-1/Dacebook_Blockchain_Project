@@ -2,8 +2,8 @@ import { Routes, Route, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import RegisterUser from "./components/RegisterUser";
 import Profile from "./components/Profile";
-import PostFeed from "./components/PostFeed";
 import Messenger from "./components/Messenger";
+import SocialFeed from "./components/SocialFeed";
 
 const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
   return (
@@ -50,7 +50,7 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
           <Route
             path="/"
             element={
-              <PostFeed
+              <SocialFeed
                 contractReadOnly={contractReadOnly}
                 contractWithSigner={contractWithSigner}
                 account={account}

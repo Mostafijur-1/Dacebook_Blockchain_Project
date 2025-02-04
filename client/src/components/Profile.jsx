@@ -8,6 +8,7 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
     bio: "",
     profilePicUrl: "",
     posts: [],
+    postCount: 0, // Added postCount state
   });
   const [isEditing, setIsEditing] = useState(false);
   const [newProfilePic, setNewProfilePic] = useState(null);
@@ -23,14 +24,18 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
   // Fetch user data from the smart contract
   useEffect(() => {
     const fetchUserData = async () => {
-      if (contractWithSigner && account) {
+      if (contractReadOnly && account) {
         try {
+          // Fetching user profile data from the contract
           const userData = await contractReadOnly.getUserProfile(account);
+          const postCount = await contractReadOnly.getPostCount(account); // Fetch post count
+
           setUser({
             name: userData.name,
             bio: userData.bio,
             profilePicUrl: userData.profilePic,
             posts: [], // Fetch posts from another contract or API if needed
+            postCount: postCount, // Set post count from the contract
           });
           setUpdatedName(userData.name);
           setUpdatedBio(userData.bio);
@@ -48,7 +53,7 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
     };
 
     fetchUserData();
-  }, [contractReadOnly, account, contractWithSigner]);
+  }, [contractReadOnly, account]);
 
   // Upload file to IPFS
   const handleFileChange = async (e) => {
@@ -74,8 +79,8 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
         const ImgHash = `${resFile.data.IpfsHash}`;
         setNewProfilePic(ImgHash);
         setImage(
-          `https://chocolate-managing-piranha-401.mypinata.cloud/ipfs/${ImgHash}`
-        ); // Update image preview
+          `https://chocolate-managing-piranha-401.mypinata.cloud/ipfs/${ImgHash}` // Update image preview
+        );
         alert("File successfully uploaded!");
         setFile(null);
       } catch (e) {
@@ -158,6 +163,8 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
             <div>
               <h1 className="text-3xl font-semibold">{user.name}</h1>
               <p className="text-gray-600">{user.bio}</p>
+              <p className="text-gray-600">Posts: {user.postCount}</p>{" "}
+              {/* Display post count */}
               <button
                 onClick={() => setIsEditing(true)}
                 className="mt-2 text-blue-500 hover:text-blue-600"
