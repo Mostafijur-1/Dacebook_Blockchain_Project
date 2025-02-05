@@ -4,8 +4,54 @@ import RegisterUser from "./components/RegisterUser";
 import Profile from "./components/Profile";
 import Messenger from "./components/Messenger";
 import SocialFeed from "./components/SocialFeed";
+import { useCallback, useEffect, useState } from "react";
 
 const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
+  const [posts, setPosts] = useState([]);
+  const [user, setUser] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  // Fetch posts from the smart contract
+  const fetchPosts = useCallback(async () => {
+    if (!contractReadOnly || !account) return;
+    setLoading(true);
+    try {
+      console.log(account);
+      const fetchedPosts = await contractReadOnly.getPosts(account);
+
+      setPosts(fetchedPosts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      console.log("Failed to fetch posts. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [contractReadOnly, account]);
+
+  // Fetch user from the smart contract
+  const fetchUser = useCallback(async () => {
+    if (!contractReadOnly || !account) return;
+    setLoading(true);
+    try {
+      console.log(account);
+      const fetchedUser = await contractReadOnly.getUserProfile(account);
+
+      setUser(fetchedUser);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      console.log("Failed to fetch user. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [contractReadOnly, account]);
+
+  useEffect(() => {
+    fetchPosts();
+    fetchUser();
+  }, [fetchPosts, fetchUser]);
+
+  console.log(user.profilePic);
+
   return (
     <div className="flex flex-col items-center gap-10 p-6">
       {/* Header */}
@@ -51,9 +97,11 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
             path="/"
             element={
               <SocialFeed
-                contractReadOnly={contractReadOnly}
                 contractWithSigner={contractWithSigner}
+                contractReadOnly={contractReadOnly}
                 account={account}
+                posts={posts}
+                loading={loading}
               />
             }
           />
@@ -67,7 +115,7 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
               <Profile
                 contractReadOnly={contractReadOnly}
                 contractWithSigner={contractWithSigner}
-                account={account}
+                user={user}
               />
             }
           />

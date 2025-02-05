@@ -1,72 +1,44 @@
-import { useEffect, useState, useCallback } from "react";
 import PropTypes from "prop-types";
 
-const PostFeed = ({ contractReadOnly, contractWithSigner, account }) => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(false);
+const PostFeed = ({ contractWithSigner, account, posts, loading }) => {
   const avatar =
     "https://res.cloudinary.com/dj0grvabc/image/upload/v1721036212/avatars/dbwtywmwej3wbtl6uazs.png";
-
-  // Fetch posts from the smart contract
-  const fetchPosts = useCallback(async () => {
-    if (!contractReadOnly || !account) return;
-    setLoading(true);
-    try {
-      console.log(account);
-      const fetchedPosts = await contractReadOnly.getPosts(account);
-
-      setPosts(fetchedPosts);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      alert("Failed to fetch posts. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, [contractReadOnly, account]);
-
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
 
   // Handle like action
   const handleLike = async (postId) => {
     try {
       const tx = await contractWithSigner.toggleLikeonPost(account, postId);
       await tx.wait();
-      updatePostLikes(postId);
+      location.reload();
+      // updatePostLikes(postId);
     } catch (error) {
       alert("Error liking post: " + error.message);
     }
   };
 
   // Update only the liked post instead of refetching all
-  const updatePostLikes = (postId) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId ? { ...post, likes: post.likes + 1 } : post
-      )
-    );
+  // const updatePostLikes = (postId) => {
+  //   setPosts((prevPosts) =>
+  //     prevPosts.map((post) =>
+  //       post.id === postId ? { ...post, likes: post.likes + 1 } : post
+  //     )
+  //   );
+  // };
+
+  const addComment = async (author, postId, comment) => {
+    if (!comment.trim()) return;
+    try {
+      const tx = await contractWithSigner.commentOnPost(
+        author,
+        postId,
+        comment
+      );
+      await tx.wait();
+      location.reload();
+    } catch (error) {
+      alert("Error adding comment: " + error.message);
+    }
   };
-
-  const addComment = useCallback(
-    async (author, postId, comment) => {
-      if (!comment.trim()) return;
-      try {
-        const tx = await contractWithSigner.commentOnPost(
-          author,
-          postId,
-          comment
-        );
-        await tx.wait();
-
-        fetchPosts();
-        setPosts(fetchPosts);
-      } catch (error) {
-        alert("Error adding comment: " + error.message);
-      }
-    },
-    [contractWithSigner, fetchPosts]
-  );
 
   return (
     <div className="max-w-xl mx-auto mt-8 space-y-6">
@@ -103,7 +75,7 @@ const PostFeed = ({ contractReadOnly, contractWithSigner, account }) => {
                 onClick={() => handleLike(post.id)}
                 className="text-blue-500 font-semibold"
               >
-                👍 {post.likes}
+                👍 {post.likes.toString()}
               </button>
             </div>
 
@@ -139,6 +111,8 @@ PostFeed.propTypes = {
   contractReadOnly: PropTypes.object.isRequired,
   contractWithSigner: PropTypes.object.isRequired,
   account: PropTypes.string,
+  posts: PropTypes.array.isRequired,
+  loading: PropTypes.bool.isRequired,
 };
 
 export default PostFeed;

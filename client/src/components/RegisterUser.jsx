@@ -19,7 +19,8 @@ const RegisterUser = ({ contractWithSigner }) => {
       const tx = await contractWithSigner.register(name, password);
       await tx.wait();
       alert("User registered successfully!");
-      navigate("/profile"); // Redirect to profile after registration
+      navigate("/profile");
+      setTimeout(() => window.location.reload(), 500); // Reload after 500ms delay
     } catch (error) {
       alert("Error registering user: " + error.message);
     } finally {

@@ -1,60 +1,35 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import axios from "axios";
 
-const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
-  const [user, setUser] = useState({
-    name: "",
-    bio: "",
-    profilePicUrl: "",
-    posts: [],
-    postCount: 0, // Added postCount state
-  });
+const Profile = ({ contractReadOnly, contractWithSigner, user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [newProfilePic, setNewProfilePic] = useState(null);
-  const [updatedName, setUpdatedName] = useState("");
   const [updatedBio, setUpdatedBio] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingPosts, setLoadingPosts] = useState(false);
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [image, setImage] = useState(
-    "https://res.cloudinary.com/dj0grvabc/image/upload/v1725610147/avatars/jcaejrqtl1qzn2mwawlf.png"
-  ); // Default profile picture
+  const [posts, setPosts] = useState([]);
 
-  // Fetch user data from the smart contract
+  const fetchPosts = useCallback(async () => {
+    if (!contractReadOnly || !user) return;
+    setLoadingPosts(true);
+    try {
+      const fetchedPosts = await contractReadOnly.getPosts(user.userAddress);
+
+      setPosts(fetchedPosts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      console.log("Failed to fetch posts. Please try again.");
+    } finally {
+      setLoadingPosts(false);
+    }
+  }, [contractReadOnly, user]);
+
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (contractReadOnly && account) {
-        try {
-          // Fetching user profile data from the contract
-          const userData = await contractReadOnly.getUserProfile(account);
-          const postCount = await contractReadOnly.getPostCount(account); // Fetch post count
-
-          setUser({
-            name: userData.name,
-            bio: userData.bio,
-            profilePicUrl: userData.profilePic,
-            posts: [], // Fetch posts from another contract or API if needed
-            postCount: postCount, // Set post count from the contract
-          });
-          setUpdatedName(userData.name);
-          setUpdatedBio(userData.bio);
-
-          // Set profile picture URL
-          if (userData.profilePic) {
-            setImage(
-              `https://chocolate-managing-piranha-401.mypinata.cloud/ipfs/${userData.profilePic}`
-            );
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      }
-    };
-
-    fetchUserData();
-  }, [contractReadOnly, account]);
-
+    fetchPosts();
+  }, [fetchPosts]);
   // Upload file to IPFS
   const handleFileChange = async (e) => {
     e.preventDefault();
@@ -77,10 +52,10 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
         });
 
         const ImgHash = `${resFile.data.IpfsHash}`;
-        setNewProfilePic(ImgHash);
-        setImage(
-          `https://chocolate-managing-piranha-401.mypinata.cloud/ipfs/${ImgHash}` // Update image preview
+        setNewProfilePic(
+          `https://chocolate-managing-piranha-401.mypinata.cloud/ipfs/${ImgHash}`
         );
+
         alert("File successfully uploaded!");
         setFile(null);
       } catch (e) {
@@ -94,7 +69,7 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
 
   // Save profile changes
   const handleSave = async () => {
-    if (!updatedName || !updatedBio) {
+    if (!updatedBio) {
       alert("Please fill in all fields.");
       return;
     }
@@ -102,31 +77,26 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
     setLoading(true);
     try {
       const tx = await contractWithSigner.updateProfile(
-        newProfilePic || user.profilePicUrl,
+        newProfilePic || user.profilePic,
         updatedBio
       );
       await tx.wait();
-      setUser({
-        ...user,
-        name: updatedName,
-        bio: updatedBio,
-        profilePicUrl: newProfilePic || user.profilePicUrl,
-      });
       setIsEditing(false);
       alert("Profile updated successfully!");
     } catch (error) {
       alert("Error updating profile: " + error.message);
     } finally {
       setLoading(false);
+      setTimeout(() => window.location.reload(), 500);
     }
   };
 
   return (
     <div className="container mx-auto p-4">
       {/* Profile Header */}
-      <div className="flex items-center space-x-4 mb-6">
+      <div className="flex items-center space-x-4 mb-6 mx-auto max-w-xl">
         <img
-          src={image}
+          src={user.profilePic}
           alt="Profile Picture"
           className="w-20 h-20 rounded-full object-cover"
         />
@@ -145,11 +115,13 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
               >
                 {isUploading ? "Uploading..." : "Upload Profile Picture"}
               </button>
+
               <textarea
                 value={updatedBio}
                 onChange={(e) => setUpdatedBio(e.target.value)}
                 className="text-gray-600 border p-2 w-full mb-2"
                 rows="4"
+                placeholder={user.bio ? user.bio : "Update Your Bio"}
               />
               <button
                 onClick={handleSave}
@@ -158,12 +130,18 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
               >
                 {loading ? "Saving..." : "Save Changes"}
               </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 px-8 ml-2"
+              >
+                Cancel
+              </button>
             </div>
           ) : (
             <div>
               <h1 className="text-3xl font-semibold">{user.name}</h1>
               <p className="text-gray-600">{user.bio}</p>
-              <p className="text-gray-600">Posts: {user.postCount}</p>{" "}
+
               {/* Display post count */}
               <button
                 onClick={() => setIsEditing(true)}
@@ -175,6 +153,57 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
           )}
         </div>
       </div>
+
+      {/* Posts Section */}
+      <div className="max-w-xl mx-auto mt-8 space-y-6">
+        {loadingPosts ? (
+          <p className="text-center">Loading posts...</p>
+        ) : posts.length > 0 ? (
+          posts.map((post) => (
+            <div key={post.id} className="bg-white p-4 rounded-lg shadow-md">
+              <div className="flex items-center space-x-3 mb-2">
+                <img
+                  src={user.profilePic}
+                  alt={post.author}
+                  className="w-10 h-10 rounded-full"
+                />
+                <span className="font-semibold">{post.author}</span>
+              </div>
+              <p className="mb-2">{post.content}</p>
+
+              {post.uploads.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {post.uploads.map((img, index) => (
+                    <img
+                      key={index}
+                      src={img}
+                      alt={`Post image ${index + 1}`}
+                      className="rounded-lg w-full h-auto"
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center space-x-4 mt-2">
+                <button className="text-blue-500 font-semibold">
+                  👍 {post.likes.toString()}
+                </button>
+              </div>
+
+              <div className="mt-2">
+                <h4 className="font-semibold">Comments:</h4>
+                {post.comments.map((comment, index) => (
+                  <p key={index} className="text-sm">
+                    {comment.userAddress}: {comment.text}
+                  </p>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-center">No posts to display.</p>
+        )}
+      </div>
     </div>
   );
 };
@@ -182,7 +211,7 @@ const Profile = ({ contractReadOnly, contractWithSigner, account }) => {
 Profile.propTypes = {
   contractWithSigner: PropTypes.object.isRequired,
   contractReadOnly: PropTypes.object.isRequired,
-  account: PropTypes.string.isRequired,
+  user: PropTypes.object.isRequired,
 };
 
 export default Profile;

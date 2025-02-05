@@ -47,7 +47,7 @@ contract Dacebook {
         require(!registered[msg.sender], "User already registered");
         users[msg.sender] = User({
             name: _name,
-            profilePic: "", // Empty initially
+            profilePic: "https://res.cloudinary.com/dj0grvabc/image/upload/v1721036212/avatars/dbwtywmwej3wbtl6uazs.png", // Empty initially
             userAddress: msg.sender,
             bio: "", // Empty initially
             passwordHash: keccak256(abi.encodePacked(_password)),
@@ -60,10 +60,13 @@ contract Dacebook {
     // Update profile with additional information
     function updateProfile(string memory _profilePic, string memory _bio) external {
         require(registered[msg.sender], "User not registered");
+        require(bytes(_bio).length <= 256, "Bio is too long");
 
-        // Update the user's profile
-        users[msg.sender].profilePic = _profilePic;
-        users[msg.sender].bio = _bio;
+        // Use a storage pointer to optimize gas usage
+        User storage user = users[msg.sender];
+
+        user.profilePic = _profilePic;
+        user.bio = _bio;
 
         emit ProfileUpdated(msg.sender, _profilePic, _bio);
     }
