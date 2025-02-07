@@ -26,21 +26,35 @@ contract Dacebook {
         Comment[] comments;
         string[] uploads; // Array of uploaded file URLs (e.g., IPFS CIDs)
     }
+    struct Message {
+    address from;
+    address to;
+    string message;
+    bool file;
+    uint256 timestamp;
+}
 
-    mapping(address => User) private users; // Mapping of user addresses to User structs
+    mapping(address => User) private users; 
     mapping(address => bool) private registered;
     mapping(address => Post[]) private userPosts;
     mapping(address => mapping(address => bool)) private friendships;
-    mapping(address => mapping(address => bool)) private wasFriends; // checks if they were ever friends.
     mapping(address => mapping(uint256 => mapping(address => bool))) public isLiked; // user -> postID -> liker -> bool
+    mapping(address => mapping(address => Message[])) private allMessages;
     uint256 private totalPosts = 0;
+    address[] private registeredUsers;
 
     event UserRegistered(address indexed userAddress, string name);
     event ProfileUpdated(address indexed userAddress, string profilePic, string bio);
     event NewPost(address indexed author, uint256 postId);
     event PostDeleted(address indexed author, uint256 postId);
     event NewMessage(address indexed sender, address indexed receiver, string content);
-    event FileUploaded(address indexed user, string fileUrl);
+    event FriendshipToggled(address indexed user, address indexed friend, bool isNowFriend);
+    event PostLiked(address indexed user, uint256 postId, bool liked);
+
+    modifier onlyRegisteredUser() {
+        require(registered[msg.sender], "User not registered");
+        _;
+    }
 
     // Register with only name and password
     function register(string memory _name, string memory _password) external {
@@ -54,8 +68,23 @@ contract Dacebook {
             friends: new address[](0) // Empty initially
         });
         registered[msg.sender] = true;
+        registeredUsers.push(msg.sender); // Track registered users
+
         emit UserRegistered(msg.sender, _name);
     }
+
+    // Get user details
+    function getAllUsers() external view returns (User[] memory) {
+    uint256 totalUsers = registeredUsers.length;
+    User[] memory allUsers = new User[](totalUsers);
+
+    for (uint256 i = 0; i < totalUsers; i++) {
+        allUsers[i] = users[registeredUsers[i]];
+    }
+
+    return allUsers;
+}
+
 
     // Update profile with additional information
     function updateProfile(string memory _profilePic, string memory _bio) external {
@@ -134,20 +163,7 @@ contract Dacebook {
         return totalPosts;
     }
 
-    // Add or remove a friend
-    function toggleFriend(address _friend) external {
-        require(registered[msg.sender], "User not registered");
-        require(registered[_friend], "Friend not registered");
-
-        if (!friendships[msg.sender][_friend]) {
-            if (!wasFriends[msg.sender][_friend]) {
-                wasFriends[msg.sender][_friend] = true;
-                users[msg.sender].friends.push(_friend);
-            }
-        }
-
-        friendships[msg.sender][_friend] = !friendships[msg.sender][_friend];
-    }
+  
 
     // Get user profile
     function getUserProfile(address _user) external view returns (User memory) {
@@ -161,30 +177,7 @@ contract Dacebook {
         return userPosts[_user];
     }
 
-    // Check if two users are friends
-    function areFriends(address _user1, address _user2) public view returns (bool) {
-        return friendships[_user1][_user2];
-    }
-
-    // Get friends list
-    function getFriends() public view returns (address[] memory) {
-        User memory user = users[msg.sender];
-        uint count = 0;
-        for (uint256 i = 0; i < user.friends.length; i++) {
-            if (areFriends(msg.sender, user.friends[i])) {
-                count++;
-            }
-        }
-
-        address[] memory result = new address[](count);
-        uint index = 0;
-        for (uint256 i = 0; i < user.friends.length; i++) {
-            if (areFriends(msg.sender, user.friends[i])) {
-                result[index++] = user.friends[i];
-            }
-        }
-        return result;
-    }
+   
 
    // Get posts (posts from user and friends)
 function getPosts(address _user) external view returns (Post[] memory) {
@@ -225,4 +218,51 @@ function getPosts(address _user) external view returns (Post[] memory) {
 
     return feed;
 }
+
+//................Messenger .............
+
+  function toggleFriend(address _friend) external {
+        require(registered[msg.sender], "User not registered");
+        require(registered[_friend], "Friend not registered");
+        friendships[msg.sender][_friend] = !friendships[msg.sender][_friend];
+    }
+
+    function sendMessage(address _to, string calldata _data) external {
+        require(registered[msg.sender] && registered[_to], "Both users must be registered");
+        require(bytes(_data).length > 0, "Message cannot be empty");
+        Message memory newMessage = Message(msg.sender, _to, _data, false, block.timestamp);
+        allMessages[msg.sender][_to].push(newMessage);
+        allMessages[_to][msg.sender].push(newMessage);
+        emit NewMessage(msg.sender, _to, _data);
+    }
+
+    function getMessages(address _msgOf) external view returns (Message[] memory) {
+        require(registered[msg.sender], "User not registered");
+        require(registered[_msgOf], "Friend not registered");
+        return allMessages[msg.sender][_msgOf];
+    }
+    
+    // Get friends list
+    function getFriends() external view onlyRegisteredUser returns (address[] memory) {
+        address[] memory tempFriends = users[msg.sender].friends;
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < tempFriends.length; i++) {
+            if (friendships[msg.sender][tempFriends[i]]) {
+                count++;
+            }
+        }
+
+        address[] memory result = new address[](count);
+        uint256 index = 0;
+
+        for (uint256 i = 0; i < tempFriends.length; i++) {
+            if (friendships[msg.sender][tempFriends[i]]) {
+                result[index++] = tempFriends[i];
+            }
+        }
+
+        return result;
+    }
+
 }
