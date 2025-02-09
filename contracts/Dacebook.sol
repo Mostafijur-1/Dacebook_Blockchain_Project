@@ -99,6 +99,11 @@ contract Dacebook {
 
         // Use a storage pointer to optimize gas usage
         User storage user = users[msg.sender];
+    // Update profile picture in user's posts
+    Post[] storage posts = userPosts[msg.sender];
+    for (uint256 i = 0; i < posts.length; i++) {
+        posts[i].author.profilePic = _profilePic;
+    }
 
         user.profilePic = _profilePic;
         user.bio = _bio;
@@ -189,6 +194,8 @@ contract Dacebook {
 function getPosts(address _user) external view returns (Post[] memory) {
     require(registered[_user], "User not registered");
     User memory user = users[_user];
+
+    // Step 1: Calculate total number of posts (user + friends)
     uint totalPostsCount = userPosts[_user].length;
     for (uint i = 0; i < user.friends.length; i++) {
         if (friendships[_user][user.friends[i]]) {
@@ -196,36 +203,50 @@ function getPosts(address _user) external view returns (Post[] memory) {
         }
     }
 
+    // Step 2: Populate the feed array
     Post[] memory feed = new Post[](totalPostsCount);
     uint index = 0;
 
-    // Add the user's own posts first
+    // Add user's own posts
     for (uint i = 0; i < userPosts[_user].length; i++) {
         feed[index++] = userPosts[_user][i];
     }
 
-    // Add friends' posts, but skip the user themselves
+    // Add friends' posts
     for (uint i = 0; i < user.friends.length; i++) {
-        if (friendships[_user][user.friends[i]] && user.friends[i] != _user) {
-            for (uint j = 0; j < userPosts[user.friends[i]].length; j++) {
-                feed[index++] = userPosts[user.friends[i]][j];
+        address friend = user.friends[i];
+        if (friendships[_user][friend]) {  // Check if they are friends
+            Post[] memory friendPosts = userPosts[friend];
+            for (uint j = 0; j < friendPosts.length; j++) {
+                feed[index++] = friendPosts[j];
             }
         }
     }
 
-    // Sorting posts by timestamp (newest first)
-    for (uint i = 0; i < totalPostsCount - 1; i++) {
-        for (uint j = i + 1; j < totalPostsCount; j++) {
-            if (feed[i].timestamp < feed[j].timestamp) {
-                Post memory temp = feed[i];
-                feed[i] = feed[j];
-                feed[j] = temp;
-            }
-        }
-    }
+    // Step 3: Sort posts by timestamp (newest first) using an optimized sorting algorithm
+    quickSort(feed, 0, totalPostsCount - 1);
 
     return feed;
 }
+
+// QuickSort function for better sorting performance (O(n log n))
+function quickSort(Post[] memory arr, uint left, uint right) internal pure {
+    if (left >= right) return;
+
+    uint pivot = arr[right].timestamp;
+    uint i = left;
+    for (uint j = left; j < right; j++) {
+        if (arr[j].timestamp > pivot) {  // Sorting in descending order (newest first)
+            (arr[i], arr[j]) = (arr[j], arr[i]);
+            i++;
+        }
+    }
+    (arr[i], arr[right]) = (arr[right], arr[i]);
+
+    if (i > 0) quickSort(arr, left, i - 1);
+    quickSort(arr, i + 1, right);
+}
+
 
 
 //................Messenger .............

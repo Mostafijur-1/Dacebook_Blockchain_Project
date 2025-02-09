@@ -126,7 +126,7 @@ const Messenger = ({ contractReadOnly, contractWithSigner, account }) => {
               ) : (
                 messages.map((message, index) => (
                   <div
-                    key={index}
+                    key={message + index}
                     className={`p-3 max-w-xs rounded-lg ${
                       message.sender.toLowerCase() === account.toLowerCase()
                         ? "bg-blue-500 text-white ml-auto"

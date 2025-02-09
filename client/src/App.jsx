@@ -47,9 +47,6 @@ function App() {
             signer
           );
           setContractWithSigner(contractWithSigner);
-          // console.log(readOnlyContract);
-          // console.log(contractWithSigner);
-          // console.log(account);
         } catch (error) {
           console.error("Failed to connect to wallet:", error);
         }

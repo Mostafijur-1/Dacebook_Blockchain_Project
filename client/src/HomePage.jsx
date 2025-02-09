@@ -123,7 +123,6 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
                 <SocialFeed
                   contractWithSigner={contractWithSigner}
                   contractReadOnly={contractReadOnly}
-                  user={user}
                   posts={posts}
                   loading={loading}
                 />
