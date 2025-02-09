@@ -16,7 +16,9 @@ const Profile = ({ contractReadOnly, contractWithSigner, user }) => {
     if (!contractReadOnly || !user) return;
     setLoadingPosts(true);
     try {
-      const fetchedPosts = await contractReadOnly.getPosts(user.userAddress);
+      const fetchedPosts = await contractReadOnly.getUserPosts(
+        user.userAddress
+      );
 
       setPosts(fetchedPosts);
     } catch (error) {
@@ -164,10 +166,10 @@ const Profile = ({ contractReadOnly, contractWithSigner, user }) => {
               <div className="flex items-center space-x-3 mb-2">
                 <img
                   src={user.profilePic}
-                  alt={post.author}
+                  alt={post.author.userAddress}
                   className="w-10 h-10 rounded-full"
                 />
-                <span className="font-semibold">{post.author}</span>
+                <span className="font-semibold">{post.author.userAddress}</span>
               </div>
               <p className="mb-2">{post.content}</p>
 

@@ -1,13 +1,13 @@
 import PropTypes from "prop-types";
 
-const PostFeed = ({ contractWithSigner, account, posts, loading }) => {
-  const avatar =
-    "https://res.cloudinary.com/dj0grvabc/image/upload/v1721036212/avatars/dbwtywmwej3wbtl6uazs.png";
-
+const PostFeed = ({ contractWithSigner, user, posts, loading }) => {
   // Handle like action
   const handleLike = async (postId) => {
     try {
-      const tx = await contractWithSigner.toggleLikeonPost(account, postId);
+      const tx = await contractWithSigner.toggleLikeonPost(
+        user.userAddress,
+        postId
+      );
       await tx.wait();
       location.reload();
       // updatePostLikes(postId);
@@ -49,11 +49,11 @@ const PostFeed = ({ contractWithSigner, account, posts, loading }) => {
           <div key={post.id} className="bg-white p-4 rounded-lg shadow-md">
             <div className="flex items-center space-x-3 mb-2">
               <img
-                src={avatar}
+                src={post.author.profilePic}
                 alt={post.author}
                 className="w-10 h-10 rounded-full"
               />
-              <span className="font-semibold">{post.author}</span>
+              <span className="font-semibold">{post.author.userAddress}</span>
             </div>
             <p className="mb-2">{post.content}</p>
 
@@ -110,7 +110,7 @@ const PostFeed = ({ contractWithSigner, account, posts, loading }) => {
 PostFeed.propTypes = {
   contractReadOnly: PropTypes.object.isRequired,
   contractWithSigner: PropTypes.object.isRequired,
-  account: PropTypes.string,
+  user: PropTypes.object.isRequired,
   posts: PropTypes.array.isRequired,
   loading: PropTypes.bool.isRequired,
 };

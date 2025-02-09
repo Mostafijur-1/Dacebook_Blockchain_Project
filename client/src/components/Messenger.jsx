@@ -38,7 +38,6 @@ const Messenger = ({ contractReadOnly, contractWithSigner, account }) => {
           (a, b) => Number(a.timestamp) - Number(b.timestamp)
         );
         setMessages(allMessages);
-        console.log(messages);
       } catch (error) {
         console.error("Error fetching messages:", error);
       }
@@ -57,7 +56,6 @@ const Messenger = ({ contractReadOnly, contractWithSigner, account }) => {
     if (!newMessage.trim() || !selectedUser) return;
 
     try {
-      console.log(newMessage);
       const tx = await contractWithSigner.sendMessage(
         selectedUser.userAddress,
         newMessage,
@@ -100,6 +98,11 @@ const Messenger = ({ contractReadOnly, contractWithSigner, account }) => {
                 }`}
                 onClick={() => setSelectedUser(user)}
               >
+                <img
+                  src={user.profilePic}
+                  alt={user.name}
+                  className="w-10 h-10 rounded-full mr-4"
+                />
                 <p className="font-medium text-lg">{user.name}</p>
               </div>
             ))}

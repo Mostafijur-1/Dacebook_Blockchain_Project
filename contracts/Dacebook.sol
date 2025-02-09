@@ -19,7 +19,7 @@ contract Dacebook {
 
     struct Post {
         uint256 id;
-        address author;
+        User author;
         string content; // Post content (e.g., text or IPFS URL)
         uint256 timestamp;
         uint256 likes;
@@ -113,7 +113,7 @@ contract Dacebook {
         Post storage newPost = userPosts[msg.sender].push();
 
         newPost.id = postId;
-        newPost.author = msg.sender;
+        newPost.author = users[msg.sender];
         newPost.content = _content;
         newPost.timestamp = block.timestamp;
         newPost.likes = 0;
@@ -125,17 +125,17 @@ contract Dacebook {
     }
 
     // Delete a post
-    function deletePost(uint256 _postId) external {
-        require(registered[msg.sender], "User not registered");
-        require(_postId < userPosts[msg.sender].length, "Invalid post ID");
-        require(userPosts[msg.sender][_postId].author == msg.sender, "Not the post author");
+    // function deletePost(uint256 _postId) external {
+    //     require(registered[msg.sender], "User not registered");
+    //     require(_postId < userPosts[msg.sender].length, "Invalid post ID");
+    //     require(userPosts[msg.sender][_postId].author.userAddress == users[msg.sender].userAddress, "Not the post author");
 
-        // Remove the post
-        delete userPosts[msg.sender][_postId];
-        totalPosts--; // Decrement total post count
+    //     // Remove the post
+    //     delete userPosts[msg.sender][_postId];
+    //     totalPosts--; // Decrement total post count
 
-        emit PostDeleted(msg.sender, _postId);
-    }
+    //     emit PostDeleted(msg.sender, _postId);
+    // }
 
     // Like a post
     function toggleLikeonPost(address _author, uint256 _postId) external {
@@ -199,12 +199,14 @@ function getPosts(address _user) external view returns (Post[] memory) {
     Post[] memory feed = new Post[](totalPostsCount);
     uint index = 0;
 
+    // Add the user's own posts first
     for (uint i = 0; i < userPosts[_user].length; i++) {
         feed[index++] = userPosts[_user][i];
     }
 
+    // Add friends' posts, but skip the user themselves
     for (uint i = 0; i < user.friends.length; i++) {
-        if (friendships[_user][user.friends[i]]) {
+        if (friendships[_user][user.friends[i]] && user.friends[i] != _user) {
             for (uint j = 0; j < userPosts[user.friends[i]].length; j++) {
                 feed[index++] = userPosts[user.friends[i]][j];
             }
@@ -225,6 +227,7 @@ function getPosts(address _user) external view returns (Post[] memory) {
     return feed;
 }
 
+
 //................Messenger .............
 
   function toggleFriend(address _friend) external {
@@ -238,6 +241,11 @@ function getPosts(address _user) external view returns (Post[] memory) {
         require(bytes(_content).length > 0, "Message cannot be empty");
 
         Message memory newMessage = Message(msg.sender, _content, _file, block.timestamp);
+
+        friendships[msg.sender][_to] = true;
+        friendships[_to][msg.sender] = true;
+        users[msg.sender].friends.push(_to);
+        users[_to].friends.push(msg.sender);
 
         // Store in both sender and receiver's conversation
         conversations[msg.sender][_to].messages.push(newMessage);

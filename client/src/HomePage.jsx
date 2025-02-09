@@ -20,6 +20,7 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
     try {
       const fetchedPosts = await contractReadOnly.getPosts(account);
       setPosts(fetchedPosts);
+      console.log("Fetched posts:", fetchedPosts);
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
@@ -42,16 +43,21 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
   }, [contractReadOnly, account]);
 
   useEffect(() => {
-    fetchPosts();
     fetchUser();
+  }, [fetchUser]);
 
-    // Delay rendering by 1 second
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  useEffect(() => {
+    // Delay rendering by 500ms
     const timer = setTimeout(() => {
       setShowContent(true);
     }, 500);
 
     return () => clearTimeout(timer); // Cleanup function
-  }, [fetchPosts, fetchUser]);
+  }, []);
 
   if (!showContent) {
     return <p className="text-center mt-10 text-gray-600">Loading...</p>; // Placeholder before loading content
@@ -117,7 +123,7 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
                 <SocialFeed
                   contractWithSigner={contractWithSigner}
                   contractReadOnly={contractReadOnly}
-                  account={account}
+                  user={user}
                   posts={posts}
                   loading={loading}
                 />
