@@ -1,177 +1,158 @@
-// import { useState } from "react";
-// import PropTypes from "prop-types";
+import { useState, useEffect, useRef } from "react";
+import PropTypes from "prop-types";
 
-import { useState } from "react";
-
-// const Messenger = ({ contractWithSigner, account }) => {
-//   const [receiver, setReceiver] = useState("");
-//   const [message, setMessage] = useState("");
-
-//   const sendMessage = async () => {
-//     try {
-//       const tx = await contractWithSigner.sendMessage(receiver, message);
-//       await tx.wait();
-//       alert("Message sent!");
-//     } catch (error) {
-//       alert("Error sending message: " + error.message);
-//     }
-//   };
-
-//   return (
-//     <div className="flex flex-col gap-4">
-//       <h2 className="text-xl font-bold">Messenger</h2>
-//       <input
-//         type="text"
-//         placeholder="Receiver Address"
-//         value={receiver}
-//         onChange={(e) => setReceiver(e.target.value)}
-//       />
-//       <textarea
-//         placeholder="Message"
-//         value={message}
-//         onChange={(e) => setMessage(e.target.value)}
-//       />
-//       <button className="btn-primary" onClick={sendMessage}>
-//         Send
-//       </button>
-//     </div>
-//   );
-// };
-// Messenger.propTypes = {
-//   contractWithSigner: PropTypes.instanceOf(Object).isRequired,
-//   account: PropTypes.string,
-// };
-
-// export default Messenger;
-
-const Messenger = () => {
-  const [selectedFriend, setSelectedFriend] = useState(null);
+const Messenger = ({ contractReadOnly, contractWithSigner, account }) => {
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [newMessage, setNewMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const messagesEndRef = useRef(null);
 
-  // Sample data for friends and their messages
-  const friends = [
-    {
-      id: 1,
-      name: "John Doe",
-      profilePicUrl:
-        "https://res.cloudinary.com/dj0grvabc/image/upload/v1721036212/avatars/dbwtywmwej3wbtl6uazs.png",
-      messages: [
-        {
-          id: 1,
-          sender: "John",
-          content: "Hey, how are you?",
-          timestamp: "2025-01-30 10:00 AM",
-        },
-        {
-          id: 2,
-          sender: "You",
-          content: "I am good, thanks for asking!",
-          timestamp: "2025-01-30 10:05 AM",
-        },
-      ],
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      profilePicUrl:
-        "https://res.cloudinary.com/dj0grvabc/image/upload/v1721036212/avatars/dbwtywmwej3wbtl6uazs.png",
-      messages: [
-        {
-          id: 1,
-          sender: "Jane",
-          content: "What’s up?",
-          timestamp: "2025-01-29 5:00 PM",
-        },
-        {
-          id: 2,
-          sender: "You",
-          content: "Not much, just chilling.",
-          timestamp: "2025-01-29 5:10 PM",
-        },
-      ],
-    },
-  ];
-
-  const handleFriendClick = (friend) => {
-    setSelectedFriend(friend);
-  };
-
-  const handleSendMessage = () => {
-    if (newMessage.trim() !== "") {
-      if (selectedFriend) {
-        const newMsg = {
-          id: selectedFriend.messages.length + 1,
-          sender: "You",
-          content: newMessage,
-          timestamp: new Date().toLocaleString(),
-        };
-        setSelectedFriend({
-          ...selectedFriend,
-          messages: [...selectedFriend.messages, newMsg],
-        });
+  // Fetch all registered users (excluding current user)
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const usersList = await contractReadOnly.getAllUsers(account);
+        const users = usersList.filter((user) => user.name !== "");
+        setUsers(users);
+      } catch (error) {
+        console.error("Error fetching users:", error);
       }
+    };
+    fetchUsers();
+  }, [contractReadOnly, account]);
+
+  // Fetch messages for the selected user
+  useEffect(() => {
+    if (!selectedUser) return;
+    const fetchMessages = async () => {
+      try {
+        console.log("Fetching messages for:", selectedUser.userAddress);
+        const [sent, received] = await contractReadOnly.getConversation(
+          account,
+          selectedUser.userAddress
+        );
+
+        // Merge and sort messages by timestamp
+        const allMessages = [...sent, ...received].sort(
+          (a, b) => Number(a.timestamp) - Number(b.timestamp)
+        );
+        setMessages(allMessages);
+        console.log(messages);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedUser, contractReadOnly, account]);
+
+  // Auto-scroll to the latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Send a new message
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedUser) return;
+
+    try {
+      console.log(newMessage);
+      const tx = await contractWithSigner.sendMessage(
+        selectedUser.userAddress,
+        newMessage,
+        false
+      );
+      await tx.wait();
       setNewMessage("");
+
+      // Fetch updated messages after sending
+      const [sent, received] = await contractReadOnly.getConversation(
+        account,
+        selectedUser.userAddress
+      );
+      setMessages(
+        [...sent, ...received].sort(
+          (a, b) => Number(a.timestamp) - Number(b.timestamp)
+        )
+      );
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
   };
 
   return (
-    <div className="flex">
-      {/* Friends List */}
-      <div className="w-1/3 bg-gray-100 p-4">
-        <h2 className="text-xl font-semibold mb-4">Friends</h2>
-        <div className="space-y-4">
-          {friends.map((friend) => (
-            <div
-              key={friend.id}
-              className="flex items-center cursor-pointer"
-              onClick={() => handleFriendClick(friend)}
-            >
-              <img
-                src={friend.profilePicUrl}
-                alt={friend.name}
-                className="w-12 h-12 rounded-full object-cover mr-4"
-              />
-              <span className="text-lg">{friend.name}</span>
-            </div>
-          ))}
-        </div>
+    <div className="flex h-screen bg-gray-100">
+      {/* Users List */}
+      <div className="w-1/4 bg-white p-4 overflow-y-auto shadow-md">
+        <h2 className="text-xl font-semibold mb-4 text-center">Users</h2>
+        {users.length === 0 ? (
+          <p className="text-center text-gray-500">No other users available</p>
+        ) : (
+          <div className="space-y-2">
+            {users.map((user) => (
+              <div
+                key={user.userAddress}
+                className={`flex items-center p-3 rounded-lg cursor-pointer transition hover:bg-gray-200 ${
+                  selectedUser?.userAddress === user.userAddress
+                    ? "bg-gray-300"
+                    : ""
+                }`}
+                onClick={() => setSelectedUser(user)}
+              >
+                <p className="font-medium text-lg">{user.name}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Chat Window */}
-      <div className="w-2/3 bg-white p-4">
-        {selectedFriend ? (
+      <div className="w-3/4 flex flex-col bg-white shadow-md rounded-lg">
+        {selectedUser ? (
           <>
-            <h2 className="text-2xl font-semibold mb-4">
-              {selectedFriend.name}
-            </h2>
-            <div className="h-96 overflow-y-auto mb-4">
-              {selectedFriend.messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`p-2 mb-2 rounded-lg ${
-                    message.sender === "You"
-                      ? "bg-blue-200 ml-auto"
-                      : "bg-gray-200"
-                  }`}
-                >
-                  <div className="text-sm text-gray-500">
-                    {message.timestamp}
-                  </div>
-                  <p>{message.content}</p>
-                </div>
-              ))}
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b bg-gray-100">
+              <h2 className="text-xl font-semibold">{selectedUser.name}</h2>
             </div>
-            {/* Message Input */}
-            <div className="flex">
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+              {messages.length === 0 ? (
+                <p className="text-center text-gray-500">No messages yet</p>
+              ) : (
+                messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 max-w-xs rounded-lg ${
+                      message.sender.toLowerCase() === account.toLowerCase()
+                        ? "bg-blue-500 text-white ml-auto"
+                        : "bg-gray-200"
+                    }`}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                    <p className="text-xs text-gray-800 mt-1 text-right">
+                      {new Date(
+                        Number(message.timestamp) * 1000
+                      ).toLocaleTimeString()}
+                    </p>
+                  </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Box */}
+            <div className="p-4 border-t flex">
               <input
                 type="text"
-                className="w-full p-2 border rounded-l-lg"
-                placeholder="Type a message"
+                className="w-full p-2 border rounded-lg focus:outline-none"
+                placeholder="Type a message..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
               />
               <button
-                className="bg-blue-500 text-white p-2 rounded-r-lg"
+                className="ml-2 bg-blue-500 text-white px-4 py-2 rounded-lg"
                 onClick={handleSendMessage}
               >
                 Send
@@ -179,13 +160,19 @@ const Messenger = () => {
             </div>
           </>
         ) : (
-          <div className="text-center text-gray-500">
-            Select a friend to start chatting.
+          <div className="flex items-center justify-center h-full text-gray-500 text-lg">
+            Select a user to start chatting.
           </div>
         )}
       </div>
     </div>
   );
+};
+
+Messenger.propTypes = {
+  contractReadOnly: PropTypes.object.isRequired,
+  contractWithSigner: PropTypes.object.isRequired,
+  account: PropTypes.string.isRequired,
 };
 
 export default Messenger;

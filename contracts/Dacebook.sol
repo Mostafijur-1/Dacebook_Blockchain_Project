@@ -26,16 +26,21 @@ contract Dacebook {
         Comment[] comments;
         string[] uploads; // Array of uploaded file URLs (e.g., IPFS CIDs)
     }
-    struct Message {
-    address from;
-    address to;
-    string message;
-    bool file;
-    uint256 timestamp;
-}
+     struct Message {
+        address sender;
+        string content;
+        bool file;
+        uint256 timestamp;
+    }
+    struct Conversation {
+        address user1;
+        address user2;
+        Message[] messages;
+    }
 
     mapping(address => User) private users; 
     mapping(address => bool) private registered;
+    mapping(address => mapping(address => Conversation)) private conversations;
     mapping(address => Post[]) private userPosts;
     mapping(address => mapping(address => bool)) private friendships;
     mapping(address => mapping(uint256 => mapping(address => bool))) public isLiked; // user -> postID -> liker -> bool
@@ -51,10 +56,7 @@ contract Dacebook {
     event FriendshipToggled(address indexed user, address indexed friend, bool isNowFriend);
     event PostLiked(address indexed user, uint256 postId, bool liked);
 
-    modifier onlyRegisteredUser() {
-        require(registered[msg.sender], "User not registered");
-        _;
-    }
+   
 
     // Register with only name and password
     function register(string memory _name, string memory _password) external {
@@ -74,12 +76,16 @@ contract Dacebook {
     }
 
     // Get user details
-    function getAllUsers() external view returns (User[] memory) {
+    function getAllUsers(address msg_sender) external view returns (User[] memory) {
     uint256 totalUsers = registeredUsers.length;
     User[] memory allUsers = new User[](totalUsers);
 
     for (uint256 i = 0; i < totalUsers; i++) {
-        allUsers[i] = users[registeredUsers[i]];
+        
+        if (registeredUsers[i] != msg_sender) {
+            allUsers[i] = users[registeredUsers[i]];
+        }
+        
     }
 
     return allUsers;
@@ -227,28 +233,41 @@ function getPosts(address _user) external view returns (Post[] memory) {
         friendships[msg.sender][_friend] = !friendships[msg.sender][_friend];
     }
 
-    function sendMessage(address _to, string calldata _data) external {
-        require(registered[msg.sender] && registered[_to], "Both users must be registered");
-        require(bytes(_data).length > 0, "Message cannot be empty");
-        Message memory newMessage = Message(msg.sender, _to, _data, false, block.timestamp);
-        allMessages[msg.sender][_to].push(newMessage);
-        allMessages[_to][msg.sender].push(newMessage);
-        emit NewMessage(msg.sender, _to, _data);
+  function sendMessage(address _to, string calldata _content, bool _file) external  {
+        require(registered[_to], "Receiver not registered");
+        require(bytes(_content).length > 0, "Message cannot be empty");
+
+        Message memory newMessage = Message(msg.sender, _content, _file, block.timestamp);
+
+        // Store in both sender and receiver's conversation
+        conversations[msg.sender][_to].messages.push(newMessage);
+        
+
+        emit NewMessage(msg.sender, _to, _content);
     }
 
-    function getMessages(address _msgOf) external view returns (Message[] memory) {
-        require(registered[msg.sender], "User not registered");
-        require(registered[_msgOf], "Friend not registered");
-        return allMessages[msg.sender][_msgOf];
-    }
+ function getConversation(address msg_sender, address _with) 
+    external 
+    view 
+     
+    returns (Message[] memory sentMessages, Message[] memory receivedMessages) 
+{
+    // Fetch messages sent by msg_sender to _with
+    sentMessages = conversations[msg_sender][_with].messages;
+    
+    // Fetch messages received by msg_sender from _with
+    receivedMessages = conversations[_with][msg_sender].messages;
+    return (sentMessages, receivedMessages);
+}
+
     
     // Get friends list
-    function getFriends() external view onlyRegisteredUser returns (address[] memory) {
-        address[] memory tempFriends = users[msg.sender].friends;
+    function getFriends(address msg_sender) external view returns (address[] memory) {
+        address[] memory tempFriends = users[msg_sender].friends;
         uint256 count = 0;
 
         for (uint256 i = 0; i < tempFriends.length; i++) {
-            if (friendships[msg.sender][tempFriends[i]]) {
+            if (friendships[msg_sender][tempFriends[i]]) {
                 count++;
             }
         }
@@ -257,7 +276,7 @@ function getPosts(address _user) external view returns (Post[] memory) {
         uint256 index = 0;
 
         for (uint256 i = 0; i < tempFriends.length; i++) {
-            if (friendships[msg.sender][tempFriends[i]]) {
+            if (friendships[msg_sender][tempFriends[i]]) {
                 result[index++] = tempFriends[i];
             }
         }
