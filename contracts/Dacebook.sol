@@ -14,17 +14,17 @@ contract Dacebook {
 
     struct Comment {
         string text;
-        address userAddress;
+        string commentor;
     }
 
     struct Post {
         uint256 id;
-        User author;
-        string content; // Post content (e.g., text or IPFS URL)
+        address authorAddress;
+        string content; 
         uint256 timestamp;
         uint256 likes;
         Comment[] comments;
-        string[] uploads; // Array of uploaded file URLs (e.g., IPFS CIDs)
+        string[] uploads; 
     }
      struct Message {
         address sender;
@@ -38,7 +38,7 @@ contract Dacebook {
         Message[] messages;
     }
 
-    mapping(address => User) private users; 
+    mapping(address => User) public users; 
     mapping(address => bool) private registered;
     mapping(address => mapping(address => Conversation)) private conversations;
     mapping(address => Post[]) private userPosts;
@@ -99,12 +99,6 @@ contract Dacebook {
 
         // Use a storage pointer to optimize gas usage
         User storage user = users[msg.sender];
-    // Update profile picture in user's posts
-    Post[] storage posts = userPosts[msg.sender];
-    for (uint256 i = 0; i < posts.length; i++) {
-        posts[i].author.profilePic = _profilePic;
-    }
-
         user.profilePic = _profilePic;
         user.bio = _bio;
 
@@ -118,7 +112,7 @@ contract Dacebook {
         Post storage newPost = userPosts[msg.sender].push();
 
         newPost.id = postId;
-        newPost.author = users[msg.sender];
+        newPost.authorAddress = msg.sender;
         newPost.content = _content;
         newPost.timestamp = block.timestamp;
         newPost.likes = 0;
@@ -129,18 +123,6 @@ contract Dacebook {
         emit NewPost(msg.sender, postId);
     }
 
-    // Delete a post
-    // function deletePost(uint256 _postId) external {
-    //     require(registered[msg.sender], "User not registered");
-    //     require(_postId < userPosts[msg.sender].length, "Invalid post ID");
-    //     require(userPosts[msg.sender][_postId].author.userAddress == users[msg.sender].userAddress, "Not the post author");
-
-    //     // Remove the post
-    //     delete userPosts[msg.sender][_postId];
-    //     totalPosts--; // Decrement total post count
-
-    //     emit PostDeleted(msg.sender, _postId);
-    // }
 
     // Like a post
     function toggleLikeonPost(address _author, uint256 _postId) external {
@@ -160,7 +142,7 @@ contract Dacebook {
         require(_postId < userPosts[_author].length, "Invalid post ID");
         require(bytes(_comment).length > 0, "Comment cannot be empty");
 
-        userPosts[_author][_postId].comments.push(Comment(_comment, msg.sender));
+        userPosts[_author][_postId].comments.push(Comment(_comment, users[msg.sender].name));
     }
 
     // Get post count for a specific user

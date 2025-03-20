@@ -74,7 +74,7 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
         <p className="mt-2 text-gray-700">
           Account:{" "}
           <span className="font-mono text-blue-600">
-            {account ? account : "Not connected"}
+            {account ? user.name : "Not connected"}
           </span>
         </p>
       </header>
@@ -125,6 +125,7 @@ const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
                   contractReadOnly={contractReadOnly}
                   posts={posts}
                   loading={loading}
+                  user={user}
                 />
               ) : (
                 <Navigate to="/register" replace />

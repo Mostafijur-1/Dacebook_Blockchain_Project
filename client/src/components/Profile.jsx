@@ -12,6 +12,37 @@ const Profile = ({ contractReadOnly, contractWithSigner, user }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [posts, setPosts] = useState([]);
 
+  const [authorDetails, setAuthorDetails] = useState({}); // Store author details
+
+  // Fetch user details for each author
+  useEffect(() => {
+    const fetchAuthorProfiles = async () => {
+      if (!contractReadOnly || posts.length === 0) return;
+
+      const uniqueAuthors = [
+        ...new Set(posts.map((post) => post.authorAddress)),
+      ];
+
+      const authorPromises = uniqueAuthors.map(async (authorAddress) => {
+        try {
+          const author = await contractReadOnly.getUserProfile(authorAddress);
+          return { address: authorAddress, author };
+        } catch (error) {
+          console.error("Error fetching author details:", error);
+          return { address: authorAddress, author: null };
+        }
+      });
+
+      const resolvedAuthors = await Promise.all(authorPromises);
+      const authorMap = Object.fromEntries(
+        resolvedAuthors.map(({ address, author }) => [address, author])
+      );
+
+      setAuthorDetails(authorMap);
+    };
+
+    fetchAuthorProfiles();
+  }, [posts, contractReadOnly]);
   const fetchPosts = useCallback(async () => {
     if (!contractReadOnly || !user) return;
     setLoadingPosts(true);
@@ -161,47 +192,52 @@ const Profile = ({ contractReadOnly, contractWithSigner, user }) => {
         {loadingPosts ? (
           <p className="text-center">Loading posts...</p>
         ) : posts.length > 0 ? (
-          posts.map((post) => (
-            <div key={post.id} className="bg-white p-4 rounded-lg shadow-md">
-              <div className="flex items-center space-x-3 mb-2">
-                <img
-                  src={user.profilePic}
-                  alt={post.author.userAddress}
-                  className="w-10 h-10 rounded-full"
-                />
-                <span className="font-semibold">{post.author.userAddress}</span>
-              </div>
-              <p className="mb-2">{post.content}</p>
+          posts.map((post) => {
+            const author = authorDetails[post.authorAddress];
+            return (
+              <div key={post.id} className="bg-white p-4 rounded-lg shadow-md">
+                <div className="flex items-center space-x-3 mb-2">
+                  <img
+                    src={author?.profilePic || "/default-avatar.png"}
+                    alt={author?.name || "Unknown User"}
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <span className="font-semibold">
+                    {author?.name || "Unknown User"}
+                  </span>
+                </div>
+                <p className="mb-2">{post.content}</p>
 
-              {post.uploads.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {post.uploads.map((img, index) => (
-                    <img
-                      key={index}
-                      src={img}
-                      alt={`Post image ${index + 1}`}
-                      className="rounded-lg w-full h-auto"
-                    />
+                {post.uploads.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {post.uploads.map((img, index) => (
+                      <img
+                        key={index}
+                        src={img}
+                        alt={`Post image ${index + 1}`}
+                        className="rounded-lg w-full h-auto"
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center space-x-4 mt-2">
+                  <button className="text-blue-500 font-semibold">
+                    👍 {post.likes.toString()}
+                  </button>
+                </div>
+
+                <div className="mt-2">
+                  <h4 className="font-semibold">Comments:</h4>
+                  {post.comments.map((comment, index) => (
+                    <p key={index} className="text-sm">
+                      {comment.userAddress}: {comment.text}
+                    </p>
                   ))}
                 </div>
-              )}
-
-              <div className="flex items-center space-x-4 mt-2">
-                <button className="text-blue-500 font-semibold">
-                  👍 {post.likes.toString()}
-                </button>
               </div>
-
-              <div className="mt-2">
-                <h4 className="font-semibold">Comments:</h4>
-                {post.comments.map((comment, index) => (
-                  <p key={index} className="text-sm">
-                    {comment.userAddress}: {comment.text}
-                  </p>
-                ))}
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <p className="text-center">No posts to display.</p>
         )}

@@ -13,6 +13,7 @@ const Messenger = ({ contractReadOnly, contractWithSigner, account }) => {
     const fetchUsers = async () => {
       try {
         const usersList = await contractReadOnly.getAllUsers(account);
+        console.log(usersList);
         const users = usersList.filter((user) => user.name !== "");
         setUsers(users);
       } catch (error) {
