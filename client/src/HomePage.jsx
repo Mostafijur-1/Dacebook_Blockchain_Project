@@ -1,182 +1,148 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
+import { useCallback, useEffect, useState } from "react";
 import RegisterUser from "./components/RegisterUser";
 import Profile from "./components/Profile";
 import Messenger from "./components/Messenger";
 import SocialFeed from "./components/SocialFeed";
-import { useCallback, useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import Header from "./components/Header";
+import Navigation from "./components/Navigation";
 
 const HomePage = ({ contractReadOnly, contractWithSigner, account }) => {
   const [posts, setPosts] = useState([]);
-  const [user, setUser] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [showContent, setShowContent] = useState(false); // State for delayed loading
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch posts from the smart contract
-  const fetchPosts = useCallback(async () => {
+  const location = useLocation();
+
+  /** Fetch user profile */
+  const fetchUser = useCallback(async () => {
     if (!contractReadOnly || !account) return;
-    setLoading(true);
     try {
-      const fetchedPosts = await contractReadOnly.getPosts(account);
-      setPosts(fetchedPosts);
-      console.log("Fetched posts:", fetchedPosts);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
+      setLoading(true);
+      const fetchedUser = await contractReadOnly.getUserProfile(account);
+      setUser(fetchedUser);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   }, [contractReadOnly, account]);
 
-  // Fetch user from the smart contract
-  const fetchUser = useCallback(async () => {
+  /** Fetch posts dynamically */
+  const fetchPosts = useCallback(async () => {
     if (!contractReadOnly || !account) return;
-    setLoading(true);
     try {
-      const fetchedUser = await contractReadOnly.getUserProfile(account);
-      setUser(fetchedUser);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-    } finally {
-      setLoading(false);
+      const fetchedPosts = await contractReadOnly.getPosts(account);
+      setPosts(fetchedPosts);
+    } catch (err) {
+      console.error("Error fetching posts:", err);
     }
   }, [contractReadOnly, account]);
 
   useEffect(() => {
     fetchUser();
-  }, [fetchUser]);
-
-  useEffect(() => {
     fetchPosts();
-  }, [fetchPosts]);
+    const interval = setInterval(fetchPosts, 10000); // Fetch new posts every 10 seconds
+    return () => clearInterval(interval);
+  }, [fetchUser, fetchPosts]);
 
-  useEffect(() => {
-    // Delay rendering by 500ms
-    const timer = setTimeout(() => {
-      setShowContent(true);
-    }, 500);
-
-    return () => clearTimeout(timer); // Cleanup function
-  }, []);
-
-  if (!showContent) {
-    return <p className="text-center mt-10 text-gray-600">Loading...</p>; // Placeholder before loading content
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-indigo-600 font-medium">
+            Loading your experience...
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col items-center gap-10 p-6">
-      {/* Header */}
-      <header className="text-center">
-        <h1 className="text-3xl font-bold text-green-600">Dacebook</h1>
-        <p className="text-sm mt-2 text-gray-500">
-          A Decentralized Private Social App
-        </p>
-        <p className="mt-2 text-gray-700">
-          Account:{" "}
-          <span className="font-mono text-blue-600">
-            {account ? user.name : "Not connected"}
-          </span>
-        </p>
-      </header>
-
-      {/* Navigation */}
-      <nav className="mb-6 bg-gray-100 p-3 rounded-lg shadow">
-        <ul className="flex space-x-6">
-          {[
-            { to: "/", label: "Home" },
-            ...(!user.name ? [{ to: "/register", label: "Register" }] : []),
-            { to: "/profile", label: "Profile" },
-            { to: "/chat", label: "Chat" },
-          ].map(({ to, label }) => (
-            <li key={to}>
-              <Link
-                to={to}
-                className="text-blue-600 hover:text-blue-800 font-semibold transition"
-              >
-                {label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* Routes */}
-      <div className="w-full max-w-4xl">
-        <Routes>
-          {/* Only allow access to Register if user is not registered */}
-          <Route
-            path="/register"
-            element={
-              !user.name ? (
-                <RegisterUser contractWithSigner={contractWithSigner} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-
-          {/* Restrict all other routes unless the user is registered */}
-          <Route
-            path="/"
-            element={
-              user.name ? (
-                <SocialFeed
-                  contractWithSigner={contractWithSigner}
-                  contractReadOnly={contractReadOnly}
-                  posts={posts}
-                  loading={loading}
-                  user={user}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <Header account={account} user={user} />
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="md:col-span-1">
+            <Navigation user={user} currentPath={location.pathname} />
+          </div>
+          <div className="md:col-span-3">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+              <Routes>
+                <Route
+                  path="/register"
+                  element={
+                    !user?.name ? (
+                      <RegisterUser contractWithSigner={contractWithSigner} />
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
+                  }
                 />
-              ) : (
-                <Navigate to="/register" replace />
-              )
-            }
-          />
-
-          <Route
-            path="/profile"
-            element={
-              user.name ? (
-                <Profile
-                  contractReadOnly={contractReadOnly}
-                  contractWithSigner={contractWithSigner}
-                  user={user}
+                <Route
+                  path="/"
+                  element={
+                    user?.name ? (
+                      <SocialFeed
+                        contractWithSigner={contractWithSigner}
+                        contractReadOnly={contractReadOnly}
+                        posts={posts}
+                        user={user}
+                      />
+                    ) : (
+                      <Navigate to="/register" replace />
+                    )
+                  }
                 />
-              ) : (
-                <Navigate to="/register" replace />
-              )
-            }
-          />
-
-          <Route
-            path="/chat"
-            element={
-              user.name ? (
-                <Messenger
-                  contractReadOnly={contractReadOnly}
-                  contractWithSigner={contractWithSigner}
-                  account={account}
+                <Route
+                  path="/profile"
+                  element={
+                    user?.name ? (
+                      <Profile
+                        contractReadOnly={contractReadOnly}
+                        contractWithSigner={contractWithSigner}
+                        user={user}
+                      />
+                    ) : (
+                      <Navigate to="/register" replace />
+                    )
+                  }
                 />
-              ) : (
-                <Navigate to="/register" replace />
-              )
-            }
-          />
-
-          {/* Catch-all route to redirect unregistered users to /register */}
-          <Route
-            path="*"
-            element={<Navigate to={user.name ? "/" : "/register"} replace />}
-          />
-        </Routes>
+                <Route
+                  path="/chat"
+                  element={
+                    user?.name ? (
+                      <Messenger
+                        contractReadOnly={contractReadOnly}
+                        contractWithSigner={contractWithSigner}
+                        account={account}
+                      />
+                    ) : (
+                      <Navigate to="/register" replace />
+                    )
+                  }
+                />
+                <Route
+                  path="*"
+                  element={
+                    <Navigate to={user?.name ? "/" : "/register"} replace />
+                  }
+                />
+              </Routes>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
+/** Prop Validation */
 HomePage.propTypes = {
-  contractReadOnly: PropTypes.instanceOf(Object).isRequired,
-  contractWithSigner: PropTypes.instanceOf(Object).isRequired,
+  contractReadOnly: PropTypes.instanceOf(Object),
+  contractWithSigner: PropTypes.instanceOf(Object),
   account: PropTypes.string,
 };
 
