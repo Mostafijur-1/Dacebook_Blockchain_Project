@@ -1,6 +1,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const RegisterUser = ({ contractWithSigner }) => {
   const [name, setName] = useState("");
@@ -10,7 +11,7 @@ const RegisterUser = ({ contractWithSigner }) => {
 
   const handleRegister = async () => {
     if (!name || !password) {
-      alert("Please fill in all fields.");
+      toast.warning("Please fill in all fields.");
       return;
     }
 
@@ -18,11 +19,11 @@ const RegisterUser = ({ contractWithSigner }) => {
     try {
       const tx = await contractWithSigner.register(name, password);
       await tx.wait();
-      alert("User registered successfully!");
+      toast.success("User registered successfully!");
       navigate("/profile");
       setTimeout(() => window.location.reload(), 500); // Reload after 500ms delay
     } catch (error) {
-      alert("Error registering user: " + error.message);
+      toast.error("Error registering user: " + error.message);
     } finally {
       setLoading(false);
     }

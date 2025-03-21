@@ -115,7 +115,7 @@ const Messenger = ({ contractReadOnly, contractWithSigner, account }) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-screen">
       <h2 className="text-2xl font-bold text-indigo-800 mb-4 p-4">Messages</h2>
 
       <div className="flex flex-1 bg-white rounded-xl overflow-hidden shadow-lg">
@@ -309,7 +309,7 @@ const Messenger = ({ contractReadOnly, contractWithSigner, account }) => {
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-slate-500 p-8">
+            <div className="flex flex-col items-center justify-start h-full text-slate-500 p-8">
               <svg
                 className="w-20 h-20 text-slate-300 mb-4"
                 fill="none"

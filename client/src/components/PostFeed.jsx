@@ -61,7 +61,7 @@ const PostFeed = ({
   };
 
   return (
-    <div className="max-w-xl mx-auto mt-8 space-y-6">
+    <div className="max-w-xl mx-auto mt-8 space-y-6 h-screen">
       {loading ? (
         <p>Loading...</p>
       ) : (

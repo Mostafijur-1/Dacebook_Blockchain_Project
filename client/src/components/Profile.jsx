@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import axios from "axios";
-import Post from "./Post"; // Importing the Post component
+import Post from "./Post";
+import { toast } from "react-toastify";
 
 const Profile = ({ contractReadOnly, contractWithSigner, user }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -67,58 +68,57 @@ const Profile = ({ contractReadOnly, contractWithSigner, user }) => {
   // Upload file to IPFS
   const handleFileChange = async (e) => {
     e.preventDefault();
-    if (file) {
-      setIsUploading(true);
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
 
-        const resFile = await axios({
-          method: "post",
-          url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
-          data: formData,
-          headers: {
-            pinata_api_key: import.meta.env.VITE__APP_PINATA_API_KEY,
-            pinata_secret_api_key: import.meta.env
-              .VITE__APP_PINATA_SECRET_API_KEY,
-            "Content-Type": "multipart/form-data",
-          },
-        });
+    if (!file) {
+      toast.warning("Please select a file to upload.");
+      return;
+    }
 
-        const ImgHash = `${resFile.data.IpfsHash}`;
-        setNewProfilePic(
-          `https://chocolate-managing-piranha-401.mypinata.cloud/ipfs/${ImgHash}`
-        );
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-        alert("File successfully uploaded!");
-        setFile(null);
-      } catch (e) {
-        console.log("Unable to upload file:", e);
-        alert("Failed to upload the file. Please try again.");
-      } finally {
-        setIsUploading(false);
-      }
+      const resFile = await axios({
+        method: "post",
+        url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        data: formData,
+        headers: {
+          pinata_api_key: import.meta.env.VITE__APP_PINATA_API_KEY,
+          pinata_secret_api_key: import.meta.env
+            .VITE__APP_PINATA_SECRET_API_KEY,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const ImgHash = `${resFile.data.IpfsHash}`;
+      setNewProfilePic(
+        `https://chocolate-managing-piranha-401.mypinata.cloud/ipfs/${ImgHash}`
+      );
+
+      toast.success("File successfully uploaded!");
+      setFile(null);
+    } catch (e) {
+      console.log("Unable to upload file:", e);
+      toast.error("Failed to upload the file. Please try again.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
   // Save profile changes
   const handleSave = async () => {
-    if (!updatedBio) {
-      alert("Please fill in all fields.");
-      return;
-    }
-
     setLoading(true);
     try {
       const tx = await contractWithSigner.updateProfile(
         newProfilePic || user.profilePic,
-        updatedBio
+        updatedBio || user.bio
       );
       await tx.wait();
       setIsEditing(false);
-      alert("Profile updated successfully!");
+      toast.success("Profile updated successfully!");
     } catch (error) {
-      alert("Error updating profile: " + error.message);
+      toast.error("Error updating profile: " + error.message);
     } finally {
       setLoading(false);
       setTimeout(() => window.location.reload(), 500);
@@ -171,7 +171,6 @@ const Profile = ({ contractReadOnly, contractWithSigner, user }) => {
                     <button
                       onClick={handleFileChange}
                       className="mt-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition duration-200 ease-in-out disabled:bg-indigo-300 disabled:cursor-not-allowed"
-                      disabled={isUploading || !file}
                     >
                       {isUploading ? (
                         <span className="flex items-center justify-center">
@@ -222,7 +221,7 @@ const Profile = ({ contractReadOnly, contractWithSigner, user }) => {
                     <button
                       onClick={handleSave}
                       className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-lg transition duration-200 ease-in-out disabled:bg-indigo-300 disabled:cursor-not-allowed"
-                      disabled={loading}
+                      disabled={isUploading ? true : false}
                     >
                       {loading ? (
                         <span className="flex items-center justify-center">

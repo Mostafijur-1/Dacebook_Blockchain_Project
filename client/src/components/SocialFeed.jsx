@@ -10,7 +10,7 @@ const SocialFeed = ({
   user,
 }) => {
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 bg-indigo-50">
       <PostCreator contractWithSigner={contractWithSigner} />
       <PostFeed
         contractReadOnly={contractReadOnly}

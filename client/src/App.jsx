@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
 import Dacebook from "./artifacts/contracts/Dacebook.sol/Dacebook.json";
-
+import { ToastContainer } from "react-toastify";
 import HomePage from "./HomePage";
 
 function App() {
@@ -65,6 +65,7 @@ function App() {
         contractWithSigner={contractWithSigner}
         account={account}
       />
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 }

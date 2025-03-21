@@ -7,7 +7,6 @@ import {
   FaPaperPlane,
   FaEllipsisH,
 } from "react-icons/fa";
-import { formatDistanceToNow } from "date-fns";
 
 const Post = ({
   post,
@@ -20,8 +19,8 @@ const Post = ({
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  const postDate = new Date(parseInt(post.timestamp || Date.now()));
-  const timeAgo = formatDistanceToNow(postDate, { addSuffix: true });
+  const postDate = new Date(parseInt(post.timestamp) * 1000);
+  // console.log(postDate);
 
   // Toggle comment section
   const toggleComments = () => setIsCommentExpanded((prev) => !prev);
@@ -49,7 +48,9 @@ const Post = ({
             <div className="font-semibold text-gray-800">
               {author?.name || post.authorAddress}
             </div>
-            <div className="text-xs text-indigo-400">{timeAgo}</div>
+            <div className="text-xs text-indigo-400">
+              {postDate.toLocaleString()}
+            </div>
           </div>
         </div>
         <button className="text-indigo-400 hover:text-indigo-600 p-2 rounded-full hover:bg-indigo-50 transition-colors duration-200">
@@ -93,7 +94,7 @@ const Post = ({
             ) : (
               <FaRegHeart className="text-lg" />
             )}
-            <span className="font-medium">{post.likes}</span>
+            <span className="font-medium">{parseInt(post.likes)}</span>
           </button>
 
           <button
