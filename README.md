@@ -1,18 +1,7 @@
 DACEBOOK | BLOCKCHAIN+REACT 
 
 
-The idea of the project was to create a blockchain network based social media for the highly secured communication group (like army). So the features are like facebook+messenger features. Necessary tools and language I used to develop the system.
-
-
-Ether.js (for interacting with the Ethereum blockchain)
-
-Solidity (for smart contracts)
-
-Hardhat (for deploy environment and testing accounts
-
-Metamask (for managing accounts and transactons)
-
-React Js (for frontend)
+Built a blockchain-based social media platform using Ethereum, Solidity, and React.js for secure military communications. Integrated MetaMask for transaction management and deployed smart contracts using Hardhat framework.
 
 
 # Sample Hardhat Project
